@@ -46,9 +46,9 @@ services:
         mode: host
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro # Use Docker Socket Proxy instead for improved security
-      # - ./data/traefik/rules:/rules # file provider directory
-      # - ./data/traefik/acme/acme.json:/acme.json # cert location - you must touch this file and change permissions to 600
-      - ./data/traefik/traefik.log:/traefik.log # for fail2ban - make sure to touch file before starting container
+      # - ${DATA_DIR}/traefik/rules:/rules # file provider directory
+      # - ${DATA_DIR}/traefik/acme/acme.json:/acme.json # cert location - you must touch this file and change permissions to 600
+      - ${DATA_DIR}/traefik/traefik.log:/traefik.log # for fail2ban - make sure to touch file before starting container
     # environment:
     #   - CF_API_EMAIL_FILE=/run/secrets/cloudflare_email
     #   - CF_API_KEY_FILE=/run/secrets/cloudflare_api_key
@@ -162,7 +162,7 @@ services:
   #     - "9000:9000"
   #   volumes:
   #     - /var/run/docker.sock:/var/run/docker.sock
-  #     - ./data/portainer/data:/data
+  #     - ${DATA_DIR}/portainer/data:/data
   #   environment:
   #     - TZ=${TZ}
   #   labels:
@@ -186,7 +186,7 @@ services:
     security_opt:
       - no-new-privileges:true
     volumes:
-      - ./data/appdata/organizr:/config
+      - ${DATA_DIR}/appdata/organizr:/config
     environment:
       - PUID=$PUID
       - PGID=$PGID
@@ -216,7 +216,7 @@ services:
       - "6881:6881"
       - "6881:6881/udp"
     volumes:
-      - ./data/qbittorrent:/config
+      - ${DATA_DIR}/qbittorrent:/config
       - ${DOWNLOADS_DIR}:/downloads
     environment:
       - TZ=${TZ}
@@ -249,7 +249,7 @@ services:
     security_opt:
       - no-new-privileges:true
     volumes:
-      - ./data/jackett:/config
+      - ${DATA_DIR}/jackett:/config
       - ${DOWNLOADS_DIR}:/downloads
       - "/etc/localtime:/etc/localtime:ro"
     environment:
@@ -284,7 +284,7 @@ services:
     volumes:
       # Optional. See why MediaCover is mounted as volume https://github.com/htpcBeginner/docker-traefik/discussions/147
       # - ${DOCKERDIR}/radarr/MediaCover:/config/MediaCover
-      - ./data/radarr:/config
+      - ${DATA_DIR}/radarr:/config
       - ${DOWNLOADS_DIR}:/downloads
       - ${MEDIA_DIR}/movies:/movies
       - "/etc/localtime:/etc/localtime:ro"
@@ -324,7 +324,7 @@ services:
     volumes:
       # Optional. See why MediaCover is mounted as volume https://github.com/htpcBeginner/docker-traefik/discussions/147
       # - ${DOCKERDIR}/sonarr/MediaCover:/config/MediaCover
-      - ./data/sonarr:/config
+      - ${DATA_DIR}/sonarr:/config
       - ${DOWNLOADS_DIR}:/downloads
       - ${MEDIA_DIR}/tvshows:/tv
       - "/etc/localtime:/etc/localtime:ro"
@@ -485,7 +485,7 @@ services:
     volumes:
       - ${MEDIA_DIR}/movies:/media/movies
       - ${MEDIA_DIR}/tvshows:/media/tvshows
-      - ./data/plexms:/config
+      - ${DATA_DIR}/plexms:/config
       # - /dev/shm:/data/transcode # Offload transcoding to RAM if you have enough RAM
     environment:
       - TZ=${TZ}
