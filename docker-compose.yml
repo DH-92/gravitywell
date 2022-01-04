@@ -1,0 +1,603 @@
+version: "3.9"
+
+networks:
+  public:
+    name: public
+    driver: bridge
+    # ipam:
+    #   config:
+    #     - subnet: 10.100.100.1/24
+  default:
+    driver: bridge
+  # socket_proxy:
+  #   name: socket_proxy
+  #   driver: bridge
+  #   ipam:
+  #     config:
+  #       - subnet: 10.100.100.2/24
+
+services:
+## Network Proxy
+  traefik:
+    # container_name: "traefik"
+    image: traefik:2.5.6
+    restart: always
+    networks:
+      public:
+        # ipv4_address: 10.100.100.254
+    # security_opt:
+    #   - no-new-privileges:true
+    #healthcheck:
+    #  test: ["CMD", "traefik", "healthcheck", "--ping"]
+    #  interval: 5s
+    #  retries: 3
+    ports:
+      - target: 80
+        published: 80
+        protocol: tcp
+        mode: host
+      - target: 443
+        published: 443
+        protocol: tcp
+        mode: host
+      - target: 8080
+        published: 8080
+        protocol: tcp
+        mode: host
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro # Use Docker Socket Proxy instead for improved security
+      # - ./data/traefik/rules:/rules # file provider directory
+      # - ./data/traefik/acme/acme.json:/acme.json # cert location - you must touch this file and change permissions to 600
+      - ./data/traefik/traefik.log:/traefik.log # for fail2ban - make sure to touch file before starting container
+    # environment:
+    #   - CF_API_EMAIL_FILE=/run/secrets/cloudflare_email
+    #   - CF_API_KEY_FILE=/run/secrets/cloudflare_api_key
+    #   - HTPASSWD_FILE=/run/secrets/htpasswd # HTPASSWD_FILE can be whatever as it is not used/called anywhere.
+    # secrets:
+    #   - cloudflare_email
+    #   - cloudflare_api_key
+    #   - htpasswd
+    command: # CLI arguments
+      # - --global.checkNewVersion=true
+      # - --global.sendAnonymousUsage=true
+      # Enable traefik file provider
+      # - --providers.file.directory=/rules # Load dynamic configuration from one or more .toml or .yml files in a directory
+      # - --providers.file.watch=true # Only works on top level files in the rules folder
+      # Enable Docker in Traefik, so that it reads labels from Docker services
+      - "--providers.docker"
+      # Enable Docker Swarm mode
+      # - --providers.docker.swarmmode=false
+      # Use Docker Socket Proxy instead for improved security
+      # - --providers.docker.endpoint=tcp://socket-proxy:2375
+      - "--providers.docker.endpoint=unix:///var/run/docker.sock"
+      - "--providers.docker.exposedByDefault=false"
+      - "--providers.docker.network=public"
+      # Automatically set Host rule for services
+      # - --providers.docker.defaultrule=Host(`{{ index .Labels "com.docker.compose.service" }}.home.jebus.dev0`)
+      # Create an entrypoint "http" listening on port 80
+      - "--entrypoints.http.address=:80"
+      # Create an entrypoint "https" listening on port 443
+      - "--entrypoints.https.address=:443"
+      # Allow CloudFlares IP Range to set Forwarded Headers
+      - "--entrypoints.https.forwardedHeaders.trustedIPs=173.245.48.0/20,103.21.244.0/22,103.22.200.0/22,103.31.4.0/22,141.101.64.0/18,108.162.192.0/18,190.93.240.0/20,188.114.96.0/20,197.234.240.0/22,198.41.128.0/17,162.158.0.0/15,104.16.0.0/13,104.24.0.0/14,172.64.0.0/13,131.0.72.0/22"
+      # Create the certificate resolver "le" for Let's Encrypt, uses the environment variable EMAIL
+      - --certificatesresolvers.le.acme.email=jebusv20@gmail.com
+      # # Store the Let's Encrypt certificates in the mounted volume
+      - --certificatesresolvers.le.acme.storage=/acme.json
+      # # Use the TLS Challenge for Let's Encrypt
+      - --certificatesresolvers.le.acme.tlschallenge=true
+      - --certificatesresolvers.le.acme.httpchallenge.entrypoint=http
+      # Enable the Traefik log, for configurations and errors
+      - "--log=true"
+      - "--log.level=DEBUG" # (Default: error) DEBUG, INFO, WARN, ERROR, FATAL, PANIC
+      # Enable the access log, with HTTP requests
+      - "--accesslog=true"
+      - "--accessLog.filePath=/traefik.log"
+      # - --accessLog.bufferingSize=100 # Configuring a buffer of 100 lines
+      # - --accessLog.filters.statusCodes=400-599
+      # Enable the Dashboard and API
+      - "--api=true"
+      - "--api.dashboard=true"
+      - "--api.insecure=true"
+      #- --metrics=true
+      #- --ping=true
+      #- --pilot.token=$TRAEFIK_PILOT_TOKEN
+      # - --serversTransport.insecureSkipVerify=true
+      # - --entrypoints.https.http.middlewares=chain-oauth@file
+      # - --entrypoints.https.http.tls.options=tls-opts@file
+      # Add dns-cloudflare as default certresolver for all services. Also enables TLS and no need to specify on individual services
+      # - --entrypoints.https.http.tls.certresolver=dns-cloudflare
+      # - --entrypoints.https.http.tls.domains[0].main=home.jebus.dev
+      # - --entrypoints.https.http.tls.domains[0].sans=*.home.jebus.dev
+      # - --certificatesResolvers.dns-cloudflare.acme.caServer=https://acme-staging-v02.api.letsencrypt.org/directory # LetsEncrypt Staging Server - uncomment when testing
+      # - --certificatesResolvers.dns-cloudflare.acme.email=$CLOUDFLARE_EMAIL
+      # - --certificatesResolvers.dns-cloudflare.acme.storage=/acme.json
+      # - --certificatesResolvers.dns-cloudflare.acme.dnsChallenge.provider=cloudflare
+      # - --certificatesResolvers.dns-cloudflare.acme.dnsChallenge.resolvers=1.1.1.1:53,1.0.0.1:53
+      # - --certificatesResolvers.dns-cloudflare.acme.dnsChallenge.delayBeforeCheck=90 # To delay DNS check and reduce LE hitrate
+    labels:
+      # Enable Traefik for this service, to make it available in the public network
+      - "traefik.enable=true"
+      # Use the traefik-public network (declared above)
+      - "traefik.docker.network=public"
+      ## Define Global Middlewares
+      # admin-auth middleware with HTTP Basic auth
+      #   Using the environment variables USERNAME and HASHED_PASSWORD
+      # - traefik.http.middlewares.admin-auth.basicauth.users=${USERNAME?Variable not set}:${HASHED_PASSWORD?Variable not set}
+      # https-redirect middleware to redirect HTTP to HTTPS
+      #   It can be re-used by other stacks in other Docker Compose files
+      - "traefik.http.middlewares.https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.middlewares.https-redirect.redirectscheme.permanent=true"
+      ## Define Global HTTP Catch-all Router - Redirect all HTTP traffic to HTTPS
+      # - "traefik.http.routers.http-catchall.rule=HostRegexp(`{host:.+}`)"
+      # - "traefik.http.routers.http-catchall.entrypoints=http"
+      # - "traefik.http.routers.http-catchall.middlewares=https-redirect"
+      ## Define the Traefik Dashboards Routes
+      - "traefik.http.routers.traefik-rtr.rule=Host(`traefik.home.ahawp.com`)"
+      - "traefik.http.routers.traefik-rtr.entrypoints=http"
+      # Use the "le" (Let's Encrypt) resolver created below
+      - "traefik.http.routers.traefik-rtr.tls=true"
+      - "traefik.http.routers.traefik-rtr.tls.certresolver=le"
+      ## Middlewares
+      # - "traefik.http.routers.traefik-rtr.middlewares=chain-oauth@file"
+      ## HTTP Services
+      - "traefik.http.routers.traefik-rtr.service=api@internal"
+      ## Healthcheck/ping
+      #- "traefik.http.routers.ping.rule=Host(`traefik.home.ahawp.com`) && Path(`/ping`)"
+      #- "traefik.http.routers.ping.tls=true"
+      #- "traefik.http.routers.ping.service=ping@internal"
+  
+
+  ############################# FRONTENDS
+
+  # Portainer - WebUI for Containers
+  portainer:
+    container_name: portainer
+    image: portainer/portainer-ce:latest
+    restart: unless-stopped
+    command: -H unix:///var/run/docker.sock
+    networks:
+      - public
+    ports:
+      - "9000:9000"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./data/portainer/data:/data
+    environment:
+      - TZ=${TZ}
+    labels:
+      - "traefik.enable=true"
+      ## HTTP Routers
+      - "traefik.http.routers.portainer-rtr.entrypoints=https"
+      - "traefik.http.routers.portainer-rtr.rule=Host(`portainer.ahawp.com`)"
+      ## Middlewares
+      # - "traefik.http.routers.portainer-rtr.middlewares=chain-oauth@file"
+      ## HTTP Services
+      - "traefik.http.routers.portainer-rtr.service=portainer-svc"
+      - "traefik.http.services.portainer-svc.loadbalancer.server.port=9000"
+
+  # Organizr - Unified Frontend
+  organizr:
+    container_name: organizr
+    image: organizr/organizr:latest
+    restart: unless-stopped
+    networks:
+      - public
+    security_opt:
+      - no-new-privileges:true
+    volumes:
+      - ./data/appdata/organizr:/config
+    environment:
+      - PUID=$PUID
+      - PGID=$PGID
+      - TZ=$TZ
+      - fpm=true
+    labels:
+      - "traefik.enable=true"
+      ## HTTP Routers
+      - "traefik.http.routers.organizr-rtr.entrypoints=https"
+      - "traefik.http.routers.organizr-rtr.rule=Host(`ahawp.com`) || Host(`organizr.ahawp.com`)"
+      ## Middlewares
+      # - "traefik.http.routers.organizr-rtr.middlewares=organizr-redirect@docker,chain-oauth@file"
+      ## HTTP Services
+      - "traefik.http.routers.organizr-rtr.service=organizr-svc"
+      - "traefik.http.services.organizr-svc.loadbalancer.server.port=80"
+
+  ############################# DOWNLOADERS
+
+  qbittorrent:
+    container_name: "qbittorrent"
+    image: "linuxserver/qbittorrent"
+    restart: unless-stopped
+    networks:
+      public:
+    ports:
+      - "8081:8081"
+      - "6881:6881"
+      - "6881:6881/udp"
+    volumes:
+      - ./data/qbittorrent:/config
+      - ${DOWNLOADS_DIR}:/downloads
+    environment:
+      - TZ=${TZ}
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - UMASK_SET=002
+      - WEBUI_PORT=8081
+    labels:
+      - "traefik.enable=true"
+      ## HTTP Routers
+      - "traefik.http.routers.qbittorent-rtr.entrypoints=https"
+      - "traefik.http.routers.qbittorent-rtr.rule=Host(`qbit.ahawp.com`)"
+      ## Middlewares
+      # - "traefik.http.routers.qbittorent-rtr.middlewares=middlewares-rate-limit@file"
+      ## HTTP Services
+      - "traefik.http.routers.qbittorent-rtr.service=qbittorent-svc"
+      - "traefik.http.services.qbittorent-svc.loadbalancer.server.port=8081"
+
+  ############################# INDEXERS
+
+  # Jackett - Torrent proxy
+  jackett:
+    container_name: jackett
+    image: linuxserver/jackett:latest
+    restart: always
+    networks:
+      public:
+    ports:
+      - "9117:9117"
+    security_opt:
+      - no-new-privileges:true
+    volumes:
+      - ./data/jackett:/config
+      - ${DOWNLOADS_DIR}:/downloads
+      - "/etc/localtime:/etc/localtime:ro"
+    environment:
+      PUID: $PUID
+      PGID: $PGID
+      TZ: $TZ
+    labels:
+      - "traefik.enable=true"
+      ## HTTP Routers
+      - "traefik.http.routers.jackett-rtr.entrypoints=https"
+      - "traefik.http.routers.jackett-rtr.rule=Host(`jackett.home.jebus.dev`)"
+      ## Middlewares
+      # - "traefik.http.routers.jackett-rtr.middlewares=chain-oauth@file"
+      ## HTTP Services
+      - "traefik.http.routers.jackett-rtr.service=jackett-svc"
+      - "traefik.http.services.jackett-svc.loadbalancer.server.port=9117"
+
+
+  ############################# PVRS
+
+  # Radarr - Movie management
+  radarr:
+    image: linuxserver/radarr # latest was causing "Error parsing column 45"
+    container_name: radarr
+    restart: always
+    networks:
+      public:
+    ports:
+      - "7878:7878"
+    security_opt:
+      - no-new-privileges:true
+    volumes:
+      # Optional. See why MediaCover is mounted as volume https://github.com/htpcBeginner/docker-traefik/discussions/147
+      # - ${DOCKERDIR}/radarr/MediaCover:/config/MediaCover
+      - ./data/radarr:/config
+      - ${DOWNLOADS_DIR}:/downloads
+      - ${MEDIA_DIR}/movies:/movies
+      - "/etc/localtime:/etc/localtime:ro"
+    environment:
+      PUID: $PUID
+      PGID: $PGID
+      TZ: $TZ
+    labels:
+      - "traefik.enable=true"
+      ## HTTP Routers Auth
+      - "traefik.http.routers.radarr-rtr.entrypoints=https"
+      - "traefik.http.routers.radarr-rtr.rule=Host(`radarr.ahawp.com`)"
+      - "traefik.http.routers.radarr-rtr.priority=99"
+      ## HTTP Routers Auth Bypass
+      # - "traefik.http.routers.radarr-rtr-bypass.entrypoints=https"
+      # - "traefik.http.routers.radarr-rtr-bypass.rule=Host(`radarr.ahawp.com`) && (Headers(`X-Api-Key`, `$RADARR_API_KEY`) || Query(`apikey`, `$RADARR_API_KEY`))"
+      # - "traefik.http.routers.radarr-rtr-bypass.priority=100"
+      ## Middlewares
+      # - "traefik.http.routers.radarr-rtr-bypass.middlewares=chain-no-auth@file"
+      # - "traefik.http.routers.radarr-rtr.middlewares=chain-oauth@file"
+      ## HTTP Services
+      # - "traefik.http.routers.radarr-rtr-bypass.service=radarr-svc"
+      - "traefik.http.services.radarr-svc.loadbalancer.server.port=7878"
+      - "traefik.http.routers.radarr-rtr.service=radarr-svc"
+
+  # Sonarr - TV Shows management
+  sonarr:
+    image: linuxserver/sonarr:latest
+    container_name: sonarr
+    restart: always
+    networks:
+      public:
+    ports:
+      - "8989:8989"
+    security_opt:
+      - no-new-privileges:true
+    volumes:
+      # Optional. See why MediaCover is mounted as volume https://github.com/htpcBeginner/docker-traefik/discussions/147
+      # - ${DOCKERDIR}/sonarr/MediaCover:/config/MediaCover
+      - ./data/sonarr:/config
+      - ${DOWNLOADS_DIR}:/downloads
+      - ${MEDIA_DIR}/tvshows:/tv
+      - "/etc/localtime:/etc/localtime:ro"
+    environment:
+      PUID: $PUID
+      PGID: $PGID
+      TZ: $TZ
+    labels:
+      - "traefik.enable=true"
+      ## HTTP Routers Auth
+      - "traefik.http.routers.sonarr-rtr.entrypoints=https"
+      - "traefik.http.routers.sonarr-rtr.rule=Host(`sonarr.ahawp.com`)"
+      - "traefik.http.routers.sonarr-rtr.priority=99"
+      ## HTTP Routers Auth Bypass
+      # - "traefik.http.routers.sonarr-rtr-bypass.entrypoints=https"
+      # - "traefik.http.routers.sonarr-rtr-bypass.rule=Host(`sonarr.ahawp.com`) && (Headers(`X-Api-Key`, `$SONARR_API_KEY`) || Query(`apikey`, `$SONARR_API_KEY`))"
+      # - "traefik.http.routers.sonarr-rtr-bypass.priority=100"
+      ## Middlewares
+      # - "traefik.http.routers.sonarr-rtr-bypass.middlewares=chain-no-auth@file"
+      # - "traefik.http.routers.sonarr-rtr.middlewares=chain-oauth@file"
+      ## HTTP Services
+      # - "traefik.http.routers.sonarr-rtr-bypass.service=sonarr-svc"
+      - "traefik.http.routers.sonarr-rtr.service=sonarr-svc"
+      - "traefik.http.services.sonarr-svc.loadbalancer.server.port=8989"
+
+  # # Lidarr - Music Management
+  # # Set url_base in lidarr settings if using PathPrefix
+  # lidarr:
+  #   image: linuxserver/lidarr:latest
+  #   container_name: lidarr
+  #   restart: "no"
+  #   # profiles:
+  #   # - media
+  #   networks:
+  #     t2_proxy:
+  #       ipv4_address: 192.168.90.163
+  #   security_opt:
+  #     - no-new-privileges:true
+  #   # ports:
+  #   #  - "$LIDARR_PORT:8686"
+  #   volumes:
+  #     - $DOCKERDIR/appdata/lidarr:/config
+  #     # Optional. See why MediaCover is mounted as volume https://github.com/htpcBeginner/docker-traefik/discussions/147
+  #     - $DATADIR/docker/appdata/lidarr/MediaCover:/config/MediaCover
+  #     - $DATADIR/downloads:/data/downloads
+  #     - $DATADIR/media/music:/data/media/music
+  #     - "/etc/localtime:/etc/localtime:ro"
+  #   environment:
+  #     PUID: $PUID
+  #     PGID: $PGID
+  #     TZ: $TZ
+  #   labels:
+  #     - "traefik.enable=true"
+  #     ## HTTP Routers Auth Bypass
+  #     - "traefik.http.routers.lidarr-rtr-bypass.entrypoints=https"
+  #     - "traefik.http.routers.lidarr-rtr-bypass.rule=Host(`lidarr.ahawp.com`) && (Headers(`X-Api-Key`, `$LIDARR_API_KEY`) || Query(`apikey`, `$LIDARR_API_KEY`))"
+  #     - "traefik.http.routers.lidarr-rtr-bypass.priority=100"
+  #     ## HTTP Routers Auth
+  #     - "traefik.http.routers.lidarr-rtr.entrypoints=https"
+  #     - "traefik.http.routers.lidarr-rtr.rule=Host(`lidarr.ahawp.com`)"
+  #     - "traefik.http.routers.lidarr-rtr.priority=99"
+  #     ## Middlewares
+  #     - "traefik.http.routers.lidarr-rtr-bypass.middlewares=chain-no-auth@file"
+  #     - "traefik.http.routers.lidarr-rtr.middlewares=chain-oauth@file"
+  #     ## HTTP Services
+  #     - "traefik.http.routers.lidarr-rtr.service=lidarr-svc"
+  #     - "traefik.http.routers.lidarr-rtr-bypass.service=lidarr-svc"
+  #     - "traefik.http.services.lidarr-svc.loadbalancer.server.port=8686"
+
+  # # Readarr - Books management
+  # # Set url_base in readarr settings if using PathPrefix
+  # readarr:
+  #   image: hotio/readarr:nightly
+  #   container_name: readarr
+  #   restart: "no"
+  #   # profiles:
+  #   # - media
+  #   networks:
+  #     t2_proxy:
+  #   security_opt:
+  #     - no-new-privileges:true
+  #   # ports:
+  #   #  - "$READARR_PORT:8989"
+  #   volumes:
+  #     - $DOCKERDIR/appdata/readarr:/config
+  #     - $DATADIR/downloads:/data/downloads
+  #     - $DATADIR/media/books:/data/media/books
+  #     - "/etc/localtime:/etc/localtime:ro"
+  #   environment:
+  #     PUID: $PUID
+  #     PGID: $PGID
+  #     TZ: $TZ
+  #     UMASK: 002
+  #     #ARGS: ""
+  #   labels:
+  #     - "traefik.enable=true"
+  #     ## HTTP Routers Auth
+  #     - "traefik.http.routers.readarr-rtr.entrypoints=https"
+  #     - "traefik.http.routers.readarr-rtr.rule=Host(`readarr.ahawp.com`)"
+  #     ## Middlewares
+  #     - "traefik.http.routers.readarr-rtr.middlewares=chain-oauth@file"
+  #     ## HTTP Services
+  #     - "traefik.http.routers.readarr-rtr.service=readarr-svc"
+  #     - "traefik.http.services.readarr-svc.loadbalancer.server.port=8787"
+
+  # # Lazylibrarian  – Ebooks and Management
+  # lazylibrarian:
+  #   image: linuxserver/lazylibrarian
+  #   container_name: lazylibrarian
+  #   restart: unless-stopped
+  #   # profiles:
+  #   # - media
+  #   networks:
+  #     - t2_proxy
+  #   security_opt:
+  #     - no-new-privileges:true
+  #   # ports:
+  #   #  - "$LAZYLIBRARIAN_PORT:5299"
+  #   volumes:
+  #     - $DOCKERDIR/appdata/lazylibrarian:/config
+  #     - $DATADIR/downloads:/data/downloads
+  #     - $DOCKERDIR/appdata/calibre/books:/books:rw
+  #     - "/etc/localtime:/etc/localtime:ro"
+  #   environment:
+  #     PUID: $PUID
+  #     PGID: $PGID
+  #     TZ: $TZ
+  #     DOCKER_MODS: linuxserver/calibre-web:calibre # set the path to converter tool to /app/calibre/ebook-convert
+  #   labels:
+  #     - "traefik.enable=true"
+  #     ## HTTP Routers Auth
+  #     - "traefik.http.routers.lazylibrarian-rtr.entrypoints=https"
+  #     - "traefik.http.routers.lazylibrarian-rtr.rule=Host(`lazy.ahawp.com`)"
+  #     ## Middlewares
+  #     - "traefik.http.routers.lazylibrarian-rtr.middlewares=chain-oauth@file"
+  #     ## HTTP Services
+  #     - "traefik.http.routers.lazylibrarian-rtr.service=lazylibrarian-svc"
+  #     - "traefik.http.services.lazylibrarian-svc.loadbalancer.server.port=5299"
+
+  ############################# MEDIA
+
+  plexms:
+    container_name: plexms
+    image: plexinc/pms-docker
+    restart: unless-stopped
+    networks:
+      - public
+    ports:
+      - "32400:32400"
+      # - "3005:3005/tcp"   #USED FOR PLEX COMPANION
+      # - "8324:8324/tcp"   #USED FOR ROKU
+      # - "32469:32469/tcp" #USED FOR DLNA
+      # - "1900:1900/udp"   #USED FOR DLNA
+      # - "32410:32410/udp" #USED FOR GSM
+      # - "32412:32412/udp" #USED FOR GSM
+      # - "32413:32413/udp" #USED FOR GSM
+      # - "32414:32414/udp" #USED FOR GSM
+    volumes:
+      - ${MEDIA_DIR}/movies:/media/movies
+      - ${MEDIA_DIR}/tvshows:/media/tvshows
+      - ./data/plexms:/config
+      # - /dev/shm:/data/transcode # Offload transcoding to RAM if you have enough RAM
+    environment:
+      - TZ=${TZ}
+      - PUID=${PUID}
+      - PLEX_GID=${PGID}
+      - PLEX_CLAIM=${PLEX_CLAIM}
+      - PLEX_IP=${PLEX_IP}
+
+  # # Calibre-web  – Ebooks and Management (Plex of Ebooks)
+  # calibre-web:
+  #   image: linuxserver/calibre-web
+  #   container_name: calibre-web
+  #   restart: "no"
+  #   # profiles:
+  #   # - media
+  #   networks:
+  #     - t2_proxy
+  #   security_opt:
+  #     - no-new-privileges:true
+  #   # ports:
+  #   #  - "$CALIBRE_WEB_PORT:8083"
+  #   volumes:
+  #     - $DOCKERDIR/appdata/calibre-web:/config
+  #     # - add path to calibre books folder
+  #     - $DATADIR/media/books:/books:rw
+  #   environment:
+  #     PUID: $PUID
+  #     PGID: $PGID
+  #     TZ: $TZ
+  #     DOCKER_MODS: linuxserver/calibre-web:calibre # set the path to converter tool to /app/calibre/ebook-convert
+  #     UMASK: 002
+  #   labels:
+  #     - "traefik.enable=true"
+  #     ## HTTP Routers Auth
+  #     - "traefik.http.routers.calibre-web-rtr.entrypoints=https"
+  #     - "traefik.http.routers.calibre-web-rtr.rule=Host(`calweb.ahawp.com`)"
+  #     ## Middlewares
+  #     - "traefik.http.routers.calibre-web-rtr.middlewares=chain-oauth@file"
+  #     ## HTTP Services
+  #     - "traefik.http.routers.calibre-web-rtr.service=calibre-web-svc"
+  #     - "traefik.http.services.calibre-web-svc.loadbalancer.server.port=8083"
+
+  # # Calibre  – Ebooks and Management (Server)
+  # calibre:
+  #   image: linuxserver/calibre
+  #   container_name: calibre
+  #   restart: "no"
+  #   # profiles:
+  #   # - media
+  #   networks:
+  #     - t2_proxy
+  #   security_opt:
+  #     - no-new-privileges:true
+  #   # ports:
+  #   #  - "$CALIBRE_PORT:8080" # Desktop GUI
+  #   #  - "$CALIBRE_PORT:8081" # Webserver GUI
+  #   volumes:
+  #     - $DOCKERDIR/appdata/calibre:/config:rw
+  #     - $DATADIR/downloads:/data/downloads:rw
+  #     - $DATADIR/media/books:/data/media/books:rw
+  #   environment:
+  #     - PUID=$PUID
+  #     - PGID=$PGID
+  #     - TZ=$TZ
+  #     # - GUAC_USER=abc #Gucamole user optional
+  #     # - GUAC_PASS=900150983cd24fb0d6963f7d28e17f72 #Guacamole password optional
+  #     - UMASK_SET=002 #optional
+  #     # - CLI_ARGS= #optional
+  #   labels:
+  #     - "traefik.enable=true"
+  #     ## HTTP Routers Auth
+  #     - "traefik.http.routers.calibre-rtr.entrypoints=https"
+  #     - "traefik.http.routers.calibre-rtr.rule=Host(`calibre.ahawp.com`)"
+  #     ## Middlewares
+  #     - "traefik.http.routers.calibre-rtr.middlewares=chain-oauth@file"
+  #     ## HTTP Services
+  #     - "traefik.http.routers.calibre-rtr.service=calibre-svc"
+  #     - "traefik.http.services.calibre-svc.loadbalancer.server.port=8080"
+
+  # # AirSonic - Music Server
+  # airsonic:
+  #   container_name: airsonic
+  #   image: linuxserver/airsonic:latest
+  #   restart: "no"
+  #   # profiles:
+  #   # - media
+  #   networks:
+  #     - t2_proxy
+  #   security_opt:
+  #     - no-new-privileges:true
+  #   # ports:
+  #   #   - "$AIRSONIC_PORT:4040"
+  #   volumes:
+  #     - $DOCKERDIR/appdata/airsonic/podcasts:/podcasts
+  #     - $DOCKERDIR/appdata/airsonic/playlists:/playlists
+  #     - $DOCKERDIR/appdata/airsonic/config:/config
+  #     - $DATADIR/media/music:/data/media/music
+  #     - /etc/timezone:/etc/timezone:ro
+  #     - /etc/localtime:/etc/localtime:ro
+  #   environment:
+  #     - PUID=$PUID
+  #     - PGID=$PGID
+  #     - JAVA_OPTS=-Dserver.use-forward-headers=true
+  #   labels:
+  #     - "traefik.enable=true"
+  #     ## HTTP Routers
+  #     - "traefik.http.routers.airsonic-rtr.entrypoints=https"
+  #     - "traefik.http.routers.airsonic-rtr.rule=Host(`proxair.ahawp.com`)"
+  #     ## Middlewares
+  #     - "traefik.http.routers.airsonic-rtr.middlewares=chain-no-auth@file"
+  #     ## HTTP Services
+  #     - "traefik.http.routers.airsonic-rtr.service=airsonic-svc"
+  #     - "traefik.http.services.airsonic-svc.loadbalancer.server.port=4040"
+
+
