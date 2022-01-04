@@ -126,8 +126,8 @@ services:
       # - traefik.http.middlewares.admin-auth.basicauth.users=${USERNAME?Variable not set}:${HASHED_PASSWORD?Variable not set}
       # https-redirect middleware to redirect HTTP to HTTPS
       #   It can be re-used by other stacks in other Docker Compose files
-      - "traefik.http.middlewares.https-redirect.redirectscheme.scheme=https"
-      - "traefik.http.middlewares.https-redirect.redirectscheme.permanent=true"
+      # - "traefik.http.middlewares.https-redirect.redirectscheme.scheme=https"
+      # - "traefik.http.middlewares.https-redirect.redirectscheme.permanent=true"
       ## Define Global HTTP Catch-all Router - Redirect all HTTP traffic to HTTPS
       # - "traefik.http.routers.http-catchall.rule=HostRegexp(`{host:.+}`)"
       # - "traefik.http.routers.http-catchall.entrypoints=http"
@@ -168,7 +168,7 @@ services:
   #   labels:
   #     - "traefik.enable=true"
   #     ## HTTP Routers
-  #     - "traefik.http.routers.portainer-rtr.entrypoints=https"
+  #     - "traefik.http.routers.portainer-rtr.entrypoints=http"
   #     - "traefik.http.routers.portainer-rtr.rule=Host(`portainer.ahawp.com`)"
   #     ## Middlewares
   #     # - "traefik.http.routers.portainer-rtr.middlewares=chain-oauth@file"
@@ -195,7 +195,7 @@ services:
     labels:
       - "traefik.enable=true"
       ## HTTP Routers
-      - "traefik.http.routers.organizr-rtr.entrypoints=https"
+      - "traefik.http.routers.organizr-rtr.entrypoints=http"
       - "traefik.http.routers.organizr-rtr.rule=Host(`ahawp.com`) || Host(`organizr.ahawp.com`)"
       ## Middlewares
       # - "traefik.http.routers.organizr-rtr.middlewares=organizr-redirect@docker,chain-oauth@file"
@@ -227,7 +227,7 @@ services:
     labels:
       - "traefik.enable=true"
       ## HTTP Routers
-      - "traefik.http.routers.qbittorent-rtr.entrypoints=https"
+      - "traefik.http.routers.qbittorent-rtr.entrypoints=http"
       - "traefik.http.routers.qbittorent-rtr.rule=Host(`qbit.ahawp.com`)"
       ## Middlewares
       # - "traefik.http.routers.qbittorent-rtr.middlewares=middlewares-rate-limit@file"
@@ -259,7 +259,7 @@ services:
     labels:
       - "traefik.enable=true"
       ## HTTP Routers
-      - "traefik.http.routers.jackett-rtr.entrypoints=https"
+      - "traefik.http.routers.jackett-rtr.entrypoints=http"
       - "traefik.http.routers.jackett-rtr.rule=Host(`jackett.ahawp.com`)"
       ## Middlewares
       # - "traefik.http.routers.jackett-rtr.middlewares=chain-oauth@file"
@@ -295,11 +295,11 @@ services:
     labels:
       - "traefik.enable=true"
       ## HTTP Routers Auth
-      - "traefik.http.routers.radarr-rtr.entrypoints=https"
+      - "traefik.http.routers.radarr-rtr.entrypoints=http"
       - "traefik.http.routers.radarr-rtr.rule=Host(`radarr.ahawp.com`)"
       - "traefik.http.routers.radarr-rtr.priority=99"
       ## HTTP Routers Auth Bypass
-      # - "traefik.http.routers.radarr-rtr-bypass.entrypoints=https"
+      # - "traefik.http.routers.radarr-rtr-bypass.entrypoints=http"
       # - "traefik.http.routers.radarr-rtr-bypass.rule=Host(`radarr.ahawp.com`) && (Headers(`X-Api-Key`, `$RADARR_API_KEY`) || Query(`apikey`, `$RADARR_API_KEY`))"
       # - "traefik.http.routers.radarr-rtr-bypass.priority=100"
       ## Middlewares
@@ -335,11 +335,11 @@ services:
     labels:
       - "traefik.enable=true"
       ## HTTP Routers Auth
-      - "traefik.http.routers.sonarr-rtr.entrypoints=https"
+      - "traefik.http.routers.sonarr-rtr.entrypoints=http"
       - "traefik.http.routers.sonarr-rtr.rule=Host(`sonarr.ahawp.com`)"
       - "traefik.http.routers.sonarr-rtr.priority=99"
       ## HTTP Routers Auth Bypass
-      # - "traefik.http.routers.sonarr-rtr-bypass.entrypoints=https"
+      # - "traefik.http.routers.sonarr-rtr-bypass.entrypoints=http"
       # - "traefik.http.routers.sonarr-rtr-bypass.rule=Host(`sonarr.ahawp.com`) && (Headers(`X-Api-Key`, `$SONARR_API_KEY`) || Query(`apikey`, `$SONARR_API_KEY`))"
       # - "traefik.http.routers.sonarr-rtr-bypass.priority=100"
       ## Middlewares
@@ -379,11 +379,11 @@ services:
   #   labels:
   #     - "traefik.enable=true"
   #     ## HTTP Routers Auth Bypass
-  #     - "traefik.http.routers.lidarr-rtr-bypass.entrypoints=https"
+  #     - "traefik.http.routers.lidarr-rtr-bypass.entrypoints=http"
   #     - "traefik.http.routers.lidarr-rtr-bypass.rule=Host(`lidarr.ahawp.com`) && (Headers(`X-Api-Key`, `$LIDARR_API_KEY`) || Query(`apikey`, `$LIDARR_API_KEY`))"
   #     - "traefik.http.routers.lidarr-rtr-bypass.priority=100"
   #     ## HTTP Routers Auth
-  #     - "traefik.http.routers.lidarr-rtr.entrypoints=https"
+  #     - "traefik.http.routers.lidarr-rtr.entrypoints=http"
   #     - "traefik.http.routers.lidarr-rtr.rule=Host(`lidarr.ahawp.com`)"
   #     - "traefik.http.routers.lidarr-rtr.priority=99"
   #     ## Middlewares
@@ -422,7 +422,7 @@ services:
   #   labels:
   #     - "traefik.enable=true"
   #     ## HTTP Routers Auth
-  #     - "traefik.http.routers.readarr-rtr.entrypoints=https"
+  #     - "traefik.http.routers.readarr-rtr.entrypoints=http"
   #     - "traefik.http.routers.readarr-rtr.rule=Host(`readarr.ahawp.com`)"
   #     ## Middlewares
   #     - "traefik.http.routers.readarr-rtr.middlewares=chain-oauth@file"
@@ -456,7 +456,7 @@ services:
   #   labels:
   #     - "traefik.enable=true"
   #     ## HTTP Routers Auth
-  #     - "traefik.http.routers.lazylibrarian-rtr.entrypoints=https"
+  #     - "traefik.http.routers.lazylibrarian-rtr.entrypoints=http"
   #     - "traefik.http.routers.lazylibrarian-rtr.rule=Host(`lazy.ahawp.com`)"
   #     ## Middlewares
   #     - "traefik.http.routers.lazylibrarian-rtr.middlewares=chain-oauth@file"
@@ -520,7 +520,7 @@ services:
   #   labels:
   #     - "traefik.enable=true"
   #     ## HTTP Routers Auth
-  #     - "traefik.http.routers.calibre-web-rtr.entrypoints=https"
+  #     - "traefik.http.routers.calibre-web-rtr.entrypoints=http"
   #     - "traefik.http.routers.calibre-web-rtr.rule=Host(`calweb.ahawp.com`)"
   #     ## Middlewares
   #     - "traefik.http.routers.calibre-web-rtr.middlewares=chain-oauth@file"
@@ -557,7 +557,7 @@ services:
   #   labels:
   #     - "traefik.enable=true"
   #     ## HTTP Routers Auth
-  #     - "traefik.http.routers.calibre-rtr.entrypoints=https"
+  #     - "traefik.http.routers.calibre-rtr.entrypoints=http"
   #     - "traefik.http.routers.calibre-rtr.rule=Host(`calibre.ahawp.com`)"
   #     ## Middlewares
   #     - "traefik.http.routers.calibre-rtr.middlewares=chain-oauth@file"
@@ -592,7 +592,7 @@ services:
   #   labels:
   #     - "traefik.enable=true"
   #     ## HTTP Routers
-  #     - "traefik.http.routers.airsonic-rtr.entrypoints=https"
+  #     - "traefik.http.routers.airsonic-rtr.entrypoints=http"
   #     - "traefik.http.routers.airsonic-rtr.rule=Host(`proxair.ahawp.com`)"
   #     ## Middlewares
   #     - "traefik.http.routers.airsonic-rtr.middlewares=chain-no-auth@file"
