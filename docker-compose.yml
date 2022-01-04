@@ -99,10 +99,10 @@ services:
       - "--api=true"
       - "--api.dashboard=true"
       - "--api.insecure=true"
-      - --metrics=true
-      - --metrics.prometheus=true
-      - --metrics.prometheus.entryPoint=metrics
-      - --entryPoints.metrics.address=:8082
+      - "--metrics=true"
+      - "--metrics.prometheus=true"
+      - "--metrics.prometheus.entryPoint=metrics"
+      - "--entryPoints.metrics.address=:8082"
       #- --ping=true
       #- --pilot.token=$TRAEFIK_PILOT_TOKEN
       # - --serversTransport.insecureSkipVerify=true
