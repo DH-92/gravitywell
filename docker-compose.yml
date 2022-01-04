@@ -166,6 +166,8 @@ services:
     networks:
       - public
     labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.prometheus.entrypoints=http"
       - "traefik.http.routers.prometheus.rule=Host(`prometheus.ahawp.com`)"
       - "traefik.http.routers.prometheus.service=prometheus"
       - "traefik.http.services.prometheus.loadbalancer.server.port=9090"
@@ -189,6 +191,8 @@ services:
       - public
     user: "104"
     labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.grafana.entrypoints=http"
       - "traefik.http.routers.grafana.rule=Host(`grafana.ahawp.com`)"
       - "traefik.http.routers.grafana.service=grafana"
       - "traefik.http.services.grafana.loadbalancer.server.port=3000"
