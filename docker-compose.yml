@@ -179,8 +179,12 @@ services:
     volumes:
       - ${DATA_DIR}/grafana:/var/lib/grafana
       - ${CONFIG_DIR}/grafana/provisioning/:/etc/grafana/provisioning/
-    env_file:
-      - ${CONFIG_DIR}/grafana/config.monitoring
+    # env_file:
+    #   - ${CONFIG_DIR}/grafana/config.monitoring
+    environment:
+     - GF_SECURITY_ADMIN_PASSWORD=foobar
+     - GF_USERS_ALLOW_SIGN_UP=false
+     - GF_INSTALL_PLUGINS=grafana-piechart-panel
     networks:
       - public
     user: "104"
