@@ -54,7 +54,7 @@ services:
     #   - CF_API_KEY_FILE=/run/secrets/cloudflare_api_key
     #   - HTPASSWD_FILE=/run/secrets/htpasswd # HTPASSWD_FILE can be whatever as it is not used/called anywhere.
     # secrets:
-    #   - cloudflare_email
+    #   - cloudflare_email 
     #   - cloudflare_api_key
     #   - htpasswd
     command: # CLI arguments
@@ -98,7 +98,7 @@ services:
       # Enable the Dashboard and API
       - "--api=true"
       - "--api.dashboard=true"
-      # - "--api.insecure=true"
+      - "--api.insecure=true"
       #- --metrics=true
       #- --ping=true
       #- --pilot.token=$TRAEFIK_PILOT_TOKEN
