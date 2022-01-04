@@ -85,8 +85,8 @@ services:
       # # Store the Let's Encrypt certificates in the mounted volume
       - --certificatesresolvers.le.acme.storage=/acme.json
       # # Use the TLS Challenge for Let's Encrypt
-      - --certificatesresolvers.le.acme.tlschallenge=true
-      - --certificatesresolvers.le.acme.httpchallenge.entrypoint=http
+      # - --certificatesresolvers.le.acme.tlschallenge=true
+      # - --certificatesresolvers.le.acme.httpchallenge.entrypoint=http
       # Enable the Traefik log, for configurations and errors
       - "--log=true"
       - "--log.level=DEBUG" # (Default: error) DEBUG, INFO, WARN, ERROR, FATAL, PANIC
@@ -99,7 +99,10 @@ services:
       - "--api=true"
       - "--api.dashboard=true"
       - "--api.insecure=true"
-      #- --metrics=true
+      - --metrics=true
+      - --metrics.prometheus=true
+      - --metrics.prometheus.entryPoint=metrics
+      - --entryPoints.metrics.address=:8082
       #- --ping=true
       #- --pilot.token=$TRAEFIK_PILOT_TOKEN
       # - --serversTransport.insecureSkipVerify=true
@@ -147,6 +150,45 @@ services:
       #- "traefik.http.routers.ping.tls=true"
       #- "traefik.http.routers.ping.service=ping@internal"
   
+  ############################# DATABASES
+
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    volumes:
+      - ./prometheus/:/etc/prometheus/
+      - ${DATA_DIR}/prometheus:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    networks:
+      - public
+    labels:
+      - "traefik.http.routers.prometheus.rule=Host(`prometheus.ahawp.com`)"
+      - "traefik.http.routers.prometheus.service=prometheus"
+      - "traefik.http.services.prometheus.loadbalancer.server.port=9090"
+      - "traefik.docker.network=public"
+
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    depends_on:
+      - prometheus
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning/:/etc/grafana/provisioning/
+    env_file:
+      - ./grafana/config.monitoring
+    networks:
+      - public
+    user: "104"
+    labels:
+      - "traefik.http.routers.grafana.rule=Host(`grafana.ahawp.com`)"
+      - "traefik.http.routers.grafana.service=grafana"
+      - "traefik.http.services.grafana.loadbalancer.server.port=3000"
+      - "traefik.docker.network=public"
 
   ############################# FRONTENDS
 
