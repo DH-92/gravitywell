@@ -33,25 +33,12 @@ services:
         published: 443
         protocol: tcp
         mode: host
-      # - target: 8080
-      #   published: 8080
-      #   protocol: tcp
-      #   mode: host
-      # - target: 8082
-      #   published: 8082
-      #   protocol: tcp
-      #   mode: host
+    environment:
+    - TZ
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro # Use Docker Socket Proxy instead for improved security
-      - ${DATA_DIR}/traefik/traefik.log:/traefik.log # for fail2ban - make sure to touch file before starting container
-    # environment:
-    #   - CF_API_EMAIL_FILE=/run/secrets/cloudflare_email
-    #   - CF_API_KEY_FILE=/run/secrets/cloudflare_api_key
-    #   - HTPASSWD_FILE=/run/secrets/htpasswd # HTPASSWD_FILE can be whatever as it is not used/called anywhere.
-    # secrets:
-    #   - cloudflare_email 
-    #   - cloudflare_api_key
-    #   - htpasswd
+      - ${DATA_DIR}/traefik/traefik.log:/traefik.log
+      - ${DATA_DIR}/traefik/access.log:/access.log
     command: # CLI arguments
       # Enable Docker in Traefik, so that it reads labels from Docker services
       - "--providers.docker"
@@ -80,11 +67,13 @@ services:
       # Enable the Traefik log, for configurations and errors
       - "--log=true"
       - "--log.level=DEBUG" # (Default: error) DEBUG, INFO, WARN, ERROR, FATAL, PANIC
+      - "--log.filePath=/traefik.log"
+      - "--log.format=json" # (Default: common) COMMON, JSON
       # Enable the access log, with HTTP requests
       - "--accesslog=true"
-      - "--accessLog.filePath=/traefik.log"
+      - "--accessLog.filePath=/access.log"
+      - "--accessLog.format=json" # (Default: common) COMMON, JSON
       # - --accessLog.bufferingSize=100 # Configuring a buffer of 100 lines
-      # - --accessLog.filters.statusCodes=400-599
       # Enable the Dashboard and API
       - "--api=true"
       - "--api.dashboard=true"
