@@ -214,7 +214,7 @@ services:
     networks:
       public:
     ports:
-      - "8081:8081"
+      - ${QBIT_WEBUI_PORT}
       - "6881:6881"
       - "6881:6881/udp"
     volumes:
@@ -225,7 +225,7 @@ services:
       - PUID=${PUID}
       - PGID=${PGID}
       - UMASK_SET=002
-      - WEBUI_PORT=8081
+      - WEBUI_PORT=${QBIT_WEBUI_PORT}
     labels:
       - "traefik.enable=true"
       ## HTTP Routers
@@ -236,7 +236,7 @@ services:
       ## HTTP Services
       # - "traefik.http.routers.qbittorent.tls=true"
       - "traefik.http.routers.qbittorent.service=qbittorent"
-      - "traefik.http.services.qbittorent.loadbalancer.server.port=8081"
+      - "traefik.http.services.qbittorent.loadbalancer.server.port=${QBIT_WEBUI_PORT}"
 
   ############################# INDEXERS
 
