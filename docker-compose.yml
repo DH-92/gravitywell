@@ -88,7 +88,7 @@ services:
       # Enable the Dashboard and API
       - "--api=true"
       - "--api.dashboard=true"
-      # - "--api.insecure=true"
+      - "--api.insecure=true"
       - "--metrics=true"
       - "--metrics.prometheus=true"
       - "--metrics.prometheus.entryPoint=metrics"
