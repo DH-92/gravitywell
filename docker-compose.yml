@@ -100,30 +100,30 @@ services:
       # Use the traefik-public network (declared above)
       - "traefik.docker.network=public"
       #   It can be re-used by other stacks in other Docker Compose files
-      - traefik.http.middlewares.https-redirect.redirectscheme.scheme=https
-      - traefik.http.middlewares.https-redirect.redirectscheme.permanent=true
+      - "traefik.http.middlewares.https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.middlewares.https-redirect.redirectscheme.permanent=true"
       ## Define Global HTTP Catch-all Router - Redirect all HTTP traffic to HTTPS
-      - traefik.http.routers.http-catchall.rule=HostRegexp(`{host:.+}`)
-      - traefik.http.routers.http-catchall.entrypoints=http
-      - traefik.http.routers.http-catchall.middlewares=https-redirect
+      - "traefik.http.routers.http-catchall.rule=HostRegexp(`{host:.+}`)"
+      - "traefik.http.routers.http-catchall.entrypoints=http"
+      - "traefik.http.routers.http-catchall.middlewares=https-redirect"
       ## Define the Traefik Dashboards Routes
       - "traefik.http.routers.traefik.rule=Host(`traefik.ahawp.com`)"
       - "traefik.http.routers.traefik.entrypoints=https"
       - "traefik.http.routers.traefik.tls=true"
       - "traefik.http.routers.traefik.service=api@internal"
-      - traefik.http.services.traefik.loadbalancer.server.port=8080
+      - "traefik.http.services.traefik.loadbalancer.server.port=8080"
       ## Healthcheck/ping
       - "traefik.http.routers.ping.rule=Host(`traefik.ahawp.com`) && Path(`/ping`)"
       - "traefik.http.routers.ping.entrypoints=https"
       - "traefik.http.routers.ping.tls=true"
       - "traefik.http.routers.ping.service=ping@internal"
-      - traefik.http.services.ping.loadbalancer.server.port=8080
+      - "traefik.http.services.ping.loadbalancer.server.port=8080"
       ## Metrics
       - "traefik.http.routers.metrics.rule=Host(`traefik.ahawp.com`) && Path(`/metrics`)"
       - "traefik.http.routers.metrics.entrypoints=https"
       - "traefik.http.routers.metrics.tls=true"
       - "traefik.http.routers.metrics.service=prometheus@internal"
-      - traefik.http.services.metrics.loadbalancer.server.port=8082
+      - "traefik.http.services.metrics.loadbalancer.server.port=8082"
   
   ############################# DATABASES
 
@@ -174,7 +174,6 @@ services:
       - "traefik.http.routers.grafana.tls=true"
       - "traefik.http.routers.grafana.service=grafana"
       - "traefik.http.services.grafana.loadbalancer.server.port=3000"
-
 
   ############################# FRONTENDS
 
