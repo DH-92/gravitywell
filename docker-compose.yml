@@ -98,7 +98,7 @@ services:
       # - "traefik.http.routers.http-catchall.entrypoints=http"
       # - "traefik.http.routers.http-catchall.middlewares=https-redirect"
       ## Define the Traefik Dashboards Routes
-      - "traefik.http.routers.traefik.rule=Host(`traefik.ahawp.com`) && ( Path(`/api`) || Path(`/dashboard`) )"
+      - "traefik.http.routers.traefik.rule=Host(`traefik.ahawp.com`)"
       - "traefik.http.routers.traefik.entrypoints=http"
       # - "traefik.http.routers.traefik.tls=true"
       - "traefik.http.routers.traefik.service=api@internal"
