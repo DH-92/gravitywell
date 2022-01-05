@@ -100,11 +100,11 @@ services:
       # Use the traefik-public network (declared above)
       - "traefik.docker.network=public"
       ## Define the Traefik Dashboards Routes
-      - "traefik.http.routers.dashboard.rule=Host(`traefik.ahawp.com`)"
-      - "traefik.http.routers.dashboard.entrypoints=http"
-      - "traefik.http.routers.dashboard.tls=true"
-      - "traefik.http.routers.dashboard.service=api@internal"
-      - traefik.http.services.dashboard.loadbalancer.server.port=8080
+      - "traefik.http.routers.traefik.rule=Host(`traefik.ahawp.com`)"
+      - "traefik.http.routers.traefik.entrypoints=http"
+      - "traefik.http.routers.traefik.tls=true"
+      - "traefik.http.routers.traefik.service=api@internal"
+      - traefik.http.services.traefik.loadbalancer.server.port=8080
       ## Healthcheck/ping
       - "traefik.http.routers.ping.rule=Host(`traefik.ahawp.com`) && Path(`/ping`)"
       - "traefik.http.routers.ping.entrypoints=http"
