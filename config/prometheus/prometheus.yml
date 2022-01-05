@@ -10,8 +10,8 @@ global:
       monitor: 'my-project'
 
 # Load and evaluate rules in this file every 'evaluation_interval' seconds.
-# rule_files:
-#   - 'alert.rules'
+rule_files:
+  - 'alert.rules'
   # - "first.rules"
   # - "second.rules"
 
@@ -29,7 +29,6 @@ scrape_configs:
   # The job name is added as a label `job=<job_name>` to any timeseries scraped from this config.
 
   - job_name: 'prometheus'
-
     # Override the global default and scrape targets from this job every 5 seconds.
     scrape_interval: 5s
 
@@ -38,7 +37,6 @@ scrape_configs:
 
 
   - job_name: 'traefik'
-
     # Override the global default and scrape targets from this job every 5 seconds.
     scrape_interval: 5s
 
