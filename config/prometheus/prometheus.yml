@@ -7,7 +7,7 @@ global:
   # Attach these labels to any time series or alerts when communicating with
   # external systems (federation, remote storage, Alertmanager).
   external_labels:
-      monitor: 'my-project'
+      monitor: 'gravity-well'
 
 # Load and evaluate rules in this file every 'evaluation_interval' seconds.
 rule_files:
@@ -44,4 +44,4 @@ scrape_configs:
     - names:
       - 'traefik'
       type: 'A'
-      port: 8080
+      port: 8082
