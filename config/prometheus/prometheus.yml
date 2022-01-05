@@ -44,6 +44,6 @@ scrape_configs:
 
     dns_sd_configs:
     - names:
-      - 'tasks.traefik'
+      - 'traefik'
       type: 'A'
       port: 8080
