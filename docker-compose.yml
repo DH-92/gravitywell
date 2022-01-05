@@ -92,6 +92,8 @@ services:
       - "--metrics=true"
       - "--metrics.prometheus=true"
       - "--metrics.prometheus.entryPoint=metrics"
+      - "--metrics.prometheus.addrouterslabels=true"
+      - "--metrics.prometheus.addServicesLabels=true"
       - "--ping=true"
       #- --pilot.token=$TRAEFIK_PILOT_TOKEN
     labels:
