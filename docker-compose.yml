@@ -84,7 +84,7 @@ services:
       - "--metrics.prometheus.addrouterslabels=true"
       - "--metrics.prometheus.addServicesLabels=true"
       - "--ping=true"
-      #- --pilot.token=$TRAEFIK_PILOT_TOKEN
+      - "--pilot.token=ff5e0126-622a-4245-874f-581f89adf8e6"
     labels:
       # Enable Traefik for this service, to make it available in the public network
       - "traefik.enable=true"
