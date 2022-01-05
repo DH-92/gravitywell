@@ -88,7 +88,7 @@ services:
       # Enable the Dashboard and API
       - "--api=true"
       - "--api.dashboard=true"
-      - "--api.insecure=true"
+      # - "--api.insecure=true"
       - "--metrics=true"
       - "--metrics.prometheus=true"
       - "--metrics.prometheus.entryPoint=metrics"
@@ -100,28 +100,28 @@ services:
       # Use the traefik-public network (declared above)
       - "traefik.docker.network=public"
       #   It can be re-used by other stacks in other Docker Compose files
-      - "traefik.http.middlewares.https-redirect.redirectscheme.scheme=https"
-      - "traefik.http.middlewares.https-redirect.redirectscheme.permanent=true"
-      ## Define Global HTTP Catch-all Router - Redirect all HTTP traffic to HTTPS
-      - "traefik.http.routers.http-catchall.rule=HostRegexp(`{host:.+}`)"
-      - "traefik.http.routers.http-catchall.entrypoints=http"
-      - "traefik.http.routers.http-catchall.middlewares=https-redirect"
+      # - "traefik.http.middlewares.https-redirect.redirectscheme.scheme=https"
+      # - "traefik.http.middlewares.https-redirect.redirectscheme.permanent=true"
+      # ## Define Global HTTP Catch-all Router - Redirect all HTTP traffic to HTTPS
+      # - "traefik.http.routers.http-catchall.rule=HostRegexp(`{host:.+}`)"
+      # - "traefik.http.routers.http-catchall.entrypoints=http"
+      # - "traefik.http.routers.http-catchall.middlewares=https-redirect"
       ## Define the Traefik Dashboards Routes
       - "traefik.http.routers.traefik.rule=Host(`traefik.ahawp.com`)"
-      - "traefik.http.routers.traefik.entrypoints=https"
-      - "traefik.http.routers.traefik.tls=true"
+      - "traefik.http.routers.traefik.entrypoints=http"
+      # - "traefik.http.routers.traefik.tls=true"
       - "traefik.http.routers.traefik.service=api@internal"
       - "traefik.http.services.traefik.loadbalancer.server.port=8080"
       ## Healthcheck/ping
       - "traefik.http.routers.ping.rule=Host(`traefik.ahawp.com`) && Path(`/ping`)"
-      - "traefik.http.routers.ping.entrypoints=https"
-      - "traefik.http.routers.ping.tls=true"
+      - "traefik.http.routers.ping.entrypoints=http"
+      # - "traefik.http.routers.ping.tls=true"
       - "traefik.http.routers.ping.service=ping@internal"
       - "traefik.http.services.ping.loadbalancer.server.port=8080"
       ## Metrics
       - "traefik.http.routers.metrics.rule=Host(`traefik.ahawp.com`) && Path(`/metrics`)"
-      - "traefik.http.routers.metrics.entrypoints=https"
-      - "traefik.http.routers.metrics.tls=true"
+      - "traefik.http.routers.metrics.entrypoints=http"
+      # - "traefik.http.routers.metrics.tls=true"
       - "traefik.http.routers.metrics.service=prometheus@internal"
       - "traefik.http.services.metrics.loadbalancer.server.port=8082"
   
@@ -143,7 +143,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=public"
-      - "traefik.http.routers.prometheus.entrypoints=https"
+      - "traefik.http.routers.prometheus.entrypoints=http"
       - "traefik.http.routers.prometheus.rule=Host(`prometheus.ahawp.com`)"
       - "traefik.http.routers.prometheus.tls=true"
       - "traefik.http.routers.prometheus.service=prometheus"
@@ -169,7 +169,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=public"
-      - "traefik.http.routers.grafana.entrypoints=https"
+      - "traefik.http.routers.grafana.entrypoints=http"
       - "traefik.http.routers.grafana.rule=Host(`grafana.ahawp.com`)"
       - "traefik.http.routers.grafana.tls=true"
       - "traefik.http.routers.grafana.service=grafana"
@@ -196,7 +196,7 @@ services:
     labels:
       - "traefik.enable=true"
       ## HTTP Routers
-      - "traefik.http.routers.organizr.entrypoints=https"
+      - "traefik.http.routers.organizr.entrypoints=http"
       - "traefik.http.routers.organizr.rule=Host(`ahawp.com`) || Host(`organizr.ahawp.com`)"
       ## Middlewares
       # - "traefik.http.routers.organizr.middlewares=organizr-redirect@docker,chain-oauth@file"
@@ -229,7 +229,7 @@ services:
     labels:
       - "traefik.enable=true"
       ## HTTP Routers
-      - "traefik.http.routers.qbittorent.entrypoints=https"
+      - "traefik.http.routers.qbittorent.entrypoints=http"
       - "traefik.http.routers.qbittorent.rule=Host(`qbit.ahawp.com`)"
       ## Middlewares
       # - "traefik.http.routers.qbittorent.middlewares=middlewares-rate-limit@file"
@@ -262,7 +262,7 @@ services:
     labels:
       - "traefik.enable=true"
       ## HTTP Routers
-      - "traefik.http.routers.jackett.entrypoints=https"
+      - "traefik.http.routers.jackett.entrypoints=http"
       - "traefik.http.routers.jackett.rule=Host(`jackett.ahawp.com`)"
       ## Middlewares
       # - "traefik.http.routers.jackett.middlewares=chain-oauth@file"
@@ -299,11 +299,11 @@ services:
     labels:
       - "traefik.enable=true"
       ## HTTP Routers Auth
-      - "traefik.http.routers.radarr.entrypoints=https"
+      - "traefik.http.routers.radarr.entrypoints=http"
       - "traefik.http.routers.radarr.rule=Host(`radarr.ahawp.com`)"
       - "traefik.http.routers.radarr.priority=99"
       ## HTTP Routers Auth Bypass
-      # - "traefik.http.routers.radarr-bypass.entrypoints=https"
+      # - "traefik.http.routers.radarr-bypass.entrypoints=http"
       # - "traefik.http.routers.radarr-bypass.rule=Host(`radarr.ahawp.com`) && (Headers(`X-Api-Key`, `$RADARR_API_KEY`) || Query(`apikey`, `$RADARR_API_KEY`))"
       # - "traefik.http.routers.radarr-bypass.priority=100"
       ## Middlewares
@@ -340,11 +340,11 @@ services:
     labels:
       - "traefik.enable=true"
       ## HTTP Routers Auth
-      - "traefik.http.routers.sonarr.entrypoints=https"
+      - "traefik.http.routers.sonarr.entrypoints=http"
       - "traefik.http.routers.sonarr.rule=Host(`sonarr.ahawp.com`)"
       - "traefik.http.routers.sonarr.priority=99"
       ## HTTP Routers Auth Bypass
-      # - "traefik.http.routers.sonarr-bypass.entrypoints=https"
+      # - "traefik.http.routers.sonarr-bypass.entrypoints=http"
       # - "traefik.http.routers.sonarr-bypass.rule=Host(`sonarr.ahawp.com`) && (Headers(`X-Api-Key`, `$SONARR_API_KEY`) || Query(`apikey`, `$SONARR_API_KEY`))"
       # - "traefik.http.routers.sonarr-bypass.priority=100"
       ## Middlewares
