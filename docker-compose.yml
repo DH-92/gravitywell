@@ -151,10 +151,9 @@ services:
     # env_file:
     #   - ${CONFIG_DIR}/grafana/config.monitoring
     environment:
-     - GF_SECURITY_ADMIN_PASSWORD=foobar
+     - GF_SECURITY_ADMIN_PASSWORD=adminadmin
      - GF_USERS_ALLOW_SIGN_UP=false
      - GF_INSTALL_PLUGINS=grafana-piechart-panel
-     - DS_TRAEFIK=Prometheus
     networks:
       - public
     user: "104"
@@ -206,7 +205,7 @@ services:
     networks:
       public:
     ports:
-      - ${QBIT_WEBUI_PORT}
+      - "${QBIT_WEBUI_PORT}:${QBIT_WEBUI_PORT}"
       - "6881:6881"
       - "6881:6881/udp"
     volumes:
@@ -239,8 +238,6 @@ services:
     restart: always
     networks:
       public:
-    ports:
-      - "9117:9117"
     security_opt:
       - no-new-privileges:true
     volumes:
@@ -273,8 +270,6 @@ services:
     restart: always
     networks:
       public:
-    ports:
-      - "7878:7878"
     security_opt:
       - no-new-privileges:true
     volumes:
@@ -314,8 +309,6 @@ services:
     restart: always
     networks:
       public:
-    ports:
-      - "8989:8989"
     security_opt:
       - no-new-privileges:true
     volumes:
