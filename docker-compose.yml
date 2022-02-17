@@ -199,7 +199,7 @@ services:
     networks:
       public:
     ports:
-      - "${QBIT_WEBUI_PORT}:${QBIT_WEBUI_PORT}"
+      # - "${QBIT_WEBUI_PORT}:${QBIT_WEBUI_PORT}"
       - "6881:6881"
       - "6881:6881/udp"
     volumes:
