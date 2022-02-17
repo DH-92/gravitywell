@@ -33,6 +33,10 @@ services:
         published: 443
         protocol: tcp
         mode: host
+      - target: 8080
+        published: 8080
+        protocol: tcp
+        mode: host
     environment:
     - TZ
     volumes:
@@ -50,7 +54,8 @@ services:
       # Automatically set Host rule for services
       # - --providers.docker.defaultrule=Host(`{{ index .Labels "com.docker.compose.service" }}.apawp.com`)
       # Create an entrypoint "http" listening on port 80
-      - "--entrypoints.http.address=:80"
+      # - "--entrypoints.http.address=:80"
+      - "--entrypoints.http.address=:8080"
       # Create an entrypoint "https" listening on port 443
       - "--entrypoints.https.address=:443"
       # Create an entrpoint "metrics" listening on port 8082
