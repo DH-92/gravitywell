@@ -56,9 +56,9 @@ services:
       # # Store the Let's Encrypt certificates in the mounted volume
       - "--certificatesresolvers.le.acme.storage=/acme.json"
       # # Use the TLS Challenge for Let's Encrypt
-      # - --certificatesresolvers.le.acme.tlschallenge=true
-      # - --certificatesresolvers.le.acme.httpchallenge.entrypoint=http
-      # Enable the Traefik log, for configurations and errors
+#       - --certificatesresolvers.le.acme.tlschallenge=true
+#       - --certificatesresolvers.le.acme.httpchallenge.entrypoint=http
+#       Enable the Traefik log, for configurations and errors
       - "--log=true"
       - "--log.level=DEBUG" # (Default: error) DEBUG, INFO, WARN, ERROR, FATAL, PANIC
       - "--log.filePath=/traefik.log"
@@ -78,7 +78,7 @@ services:
       - "--metrics.prometheus.addrouterslabels=true"
       - "--metrics.prometheus.addServicesLabels=true"
       - "--ping=true"
-      - "--pilot.token=ff5e0126-622a-4245-874f-581f89adf8e6"
+#       - "--pilot.token=ff5e0126-622a-4245-874f-581f89adf8e6"
     labels:
       # Enable Traefik for this service, to make it available in the public network
       - "traefik.enable=true"
@@ -93,20 +93,20 @@ services:
       # - "traefik.http.routers.http-catchall.middlewares=https-redirect"
       ## Define the Traefik Dashboards Routes
       - "traefik.http.routers.traefik.rule=Host(`traefik.ahawp.com`)"
-      - "traefik.http.routers.traefik.entrypoints=http"
-      # - "traefik.http.routers.traefik.tls=true"
+      - "traefik.http.routers.traefik.entrypoints=https"
+      - "traefik.http.routers.traefik.tls=true"
       - "traefik.http.routers.traefik.service=api@internal"
       # - "traefik.http.services.traefik.loadbalancer.server.port=8080"
       ## Healthcheck/ping
       - "traefik.http.routers.ping.rule=Host(`traefik.ahawp.com`) && Path(`/ping`)"
-      - "traefik.http.routers.ping.entrypoints=http"
-      # - "traefik.http.routers.ping.tls=true"
+      - "traefik.http.routers.ping.entrypoints=https"
+      - "traefik.http.routers.ping.tls=true"
       - "traefik.http.routers.ping.service=ping@internal"
       # - "traefik.http.services.ping.loadbalancer.server.port=8080"
       ## Metrics
       - "traefik.http.routers.metrics.rule=Host(`traefik.ahawp.com`) && Path(`/metrics`)"
-      - "traefik.http.routers.metrics.entrypoints=http"
-      # - "traefik.http.routers.metrics.tls=true"
+      - "traefik.http.routers.metrics.entrypoints=https"
+      - "traefik.http.routers.metrics.tls=true"
       - "traefik.http.routers.metrics.service=prometheus@internal"
       # - "traefik.http.services.metrics.loadbalancer.server.port=8082"
   
