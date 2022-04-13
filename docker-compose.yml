@@ -9,7 +9,7 @@ services:
 ## Network Proxy
   traefik:
     container_name: "traefik"
-    image: traefik:2.6.1
+    image: traefik:2.6.3
     restart: always
     networks:
       public:
@@ -341,10 +341,10 @@ services:
     container_name: plexms
     image: plexinc/pms-docker
     restart: unless-stopped
-    networks:
-      - public
     ports:
-      - "32400:32400"
+      - target: 32400
+        published: 32400
+        mode: host
       # - "3005:3005/tcp"   #USED FOR PLEX COMPANION
       # - "8324:8324/tcp"   #USED FOR ROKU
       # - "32469:32469/tcp" #USED FOR DLNA
@@ -357,10 +357,11 @@ services:
       - ${MEDIA_DIR}/movies:/media/movies
       - ${MEDIA_DIR}/tvshows:/media/tvshows
       - ${DATA_DIR}/plexms:/config
-      # - /dev/shm:/data/transcode # Offload transcoding to RAM if you have enough RAM
+      - /dev/shm:/data/transcode # Offload transcoding to RAM if you have enough RAM
     environment:
       - TZ=${TZ}
       - PUID=${PUID}
       - PLEX_GID=${PGID}
       - PLEX_CLAIM=${PLEX_CLAIM}
       - PLEX_IP=${PLEX_IP}
+      - ADVERTISE_IP=${PLEX_IP}
