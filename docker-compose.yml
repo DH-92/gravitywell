@@ -4,6 +4,8 @@ networks:
   public:
     name: public
     driver: bridge
+  host:
+    external: 'true'
 
 services:
 ## Network Proxy
