@@ -94,19 +94,19 @@ services:
       # - "traefik.http.routers.http-catchall.entrypoints=http"
       # - "traefik.http.routers.http-catchall.middlewares=https-redirect"
       ## Define the Traefik Dashboards Routes
-      - "traefik.http.routers.traefik.rule=Host(`traefik.home.ahawp.com`)"
+      - "traefik.http.routers.traefik.rule=Host(`traefik.${DOMAINNAME}`)"
       - "traefik.http.routers.traefik.entrypoints=http"
       # - "traefik.http.routers.traefik.tls=true"
       - "traefik.http.routers.traefik.service=api@internal"
       # - "traefik.http.services.traefik.loadbalancer.server.port=8080"
       ## Healthcheck/ping
-      - "traefik.http.routers.ping.rule=Host(`traefik.home.ahawp.com`) && Path(`/ping`)"
+      - "traefik.http.routers.ping.rule=Host(`traefik.${DOMAINNAME}`) && Path(`/ping`)"
       - "traefik.http.routers.ping.entrypoints=http"
       # - "traefik.http.routers.ping.tls=true"
       - "traefik.http.routers.ping.service=ping@internal"
       # - "traefik.http.services.ping.loadbalancer.server.port=8080"
       ## Metrics
-      - "traefik.http.routers.metrics.rule=Host(`traefik.home.ahawp.com`) && Path(`/metrics`)"
+      - "traefik.http.routers.metrics.rule=Host(`traefik.${DOMAINNAME}`) && Path(`/metrics`)"
       - "traefik.http.routers.metrics.entrypoints=http"
       # - "traefik.http.routers.metrics.tls=true"
       - "traefik.http.routers.metrics.service=prometheus@internal"
@@ -131,7 +131,7 @@ services:
       - "traefik.enable=true"
       - "traefik.docker.network=public"
       - "traefik.http.routers.prometheus.entrypoints=http"
-      - "traefik.http.routers.prometheus.rule=Host(`prometheus.home.ahawp.com`)"
+      - "traefik.http.routers.prometheus.rule=Host(`prometheus.${DOMAINNAME}`)"
       # - "traefik.http.routers.prometheus.tls=true"
       - "traefik.http.routers.prometheus.service=prometheus"
       - "traefik.http.services.prometheus.loadbalancer.server.port=9090"
@@ -157,7 +157,7 @@ services:
       - "traefik.enable=true"
       - "traefik.docker.network=public"
       - "traefik.http.routers.grafana.entrypoints=http"
-      - "traefik.http.routers.grafana.rule=Host(`grafana.home.ahawp.com`)"
+      - "traefik.http.routers.grafana.rule=Host(`grafana.${DOMAINNAME}`)"
       # - "traefik.http.routers.grafana.tls=true"
       - "traefik.http.routers.grafana.service=grafana"
       - "traefik.http.services.grafana.loadbalancer.server.port=3000"
@@ -167,7 +167,7 @@ services:
   # Organizr - Unified Frontend
   organizr:
     container_name: organizr
-    image: organizr/organizr:latest
+    image: organizr/organizr
     restart: unless-stopped
     networks:
       - public
@@ -184,7 +184,7 @@ services:
       - "traefik.enable=true"
       ## HTTP Routers
       - "traefik.http.routers.organizr.entrypoints=http"
-      - "traefik.http.routers.organizr.rule=Host(`ahawp.com`) || Host(`organizr.home.ahawp.com`)"
+      - "traefik.http.routers.organizr.rule=Host(`${DOMAINNAME}`) || Host(`organizr.${DOMAINNAME}`)"
       ## Middlewares
       # - "traefik.http.routers.organizr.middlewares=organizr-redirect@docker,chain-oauth@file"
       ## HTTP Services
@@ -217,7 +217,7 @@ services:
       - "traefik.enable=true"
       ## HTTP Routers
       - "traefik.http.routers.qbittorent.entrypoints=http"
-      - "traefik.http.routers.qbittorent.rule=Host(`qbit.home.ahawp.com`)"
+      - "traefik.http.routers.qbittorent.rule=Host(`qbit.${DOMAINNAME}`)"
       ## Middlewares
       # - "traefik.http.routers.qbittorent.middlewares=middlewares-rate-limit@file"
       ## HTTP Services
@@ -230,7 +230,7 @@ services:
   # Jackett - Torrent proxy
   jackett:
     container_name: jackett
-    image: linuxserver/jackett:latest
+    image: linuxserver/jackett
     restart: always
     networks:
       public:
@@ -248,7 +248,7 @@ services:
       - "traefik.enable=true"
       ## HTTP Routers
       - "traefik.http.routers.jackett.entrypoints=http"
-      - "traefik.http.routers.jackett.rule=Host(`jackett.home.ahawp.com`)"
+      - "traefik.http.routers.jackett.rule=Host(`jackett.${DOMAINNAME}`)"
       ## Middlewares
       # - "traefik.http.routers.jackett.middlewares=chain-oauth@file"
       ## HTTP Services
@@ -261,7 +261,7 @@ services:
 
   # Radarr - Movie management
   radarr:
-    image: linuxserver/radarr # latest was causing "Error parsing column 45"
+    image: linuxserver/radarr
     container_name: radarr
     restart: always
     networks:
@@ -283,11 +283,11 @@ services:
       - "traefik.enable=true"
       ## HTTP Routers Auth
       - "traefik.http.routers.radarr.entrypoints=http"
-      - "traefik.http.routers.radarr.rule=Host(`radarr.home.ahawp.com`)"
+      - "traefik.http.routers.radarr.rule=Host(`radarr.${DOMAINNAME}`)"
       - "traefik.http.routers.radarr.priority=99"
       ## HTTP Routers Auth Bypass
       # - "traefik.http.routers.radarr-bypass.entrypoints=http"
-      # - "traefik.http.routers.radarr-bypass.rule=Host(`radarr.ahawp.com`) && (Headers(`X-Api-Key`, `$RADARR_API_KEY`) || Query(`apikey`, `$RADARR_API_KEY`))"
+      # - "traefik.http.routers.radarr-bypass.rule=Host(`radarr.${DOMAINNAME}`) && (Headers(`X-Api-Key`, `$RADARR_API_KEY`) || Query(`apikey`, `$RADARR_API_KEY`))"
       # - "traefik.http.routers.radarr-bypass.priority=100"
       ## Middlewares
       # - "traefik.http.routers.radarr-bypass.middlewares=chain-no-auth@file"
@@ -300,7 +300,7 @@ services:
 
   # Sonarr - TV Shows management
   sonarr:
-    image: linuxserver/sonarr:latest
+    image: linuxserver/sonarr
     container_name: sonarr
     restart: always
     networks:
@@ -322,11 +322,11 @@ services:
       - "traefik.enable=true"
       ## HTTP Routers Auth
       - "traefik.http.routers.sonarr.entrypoints=http"
-      - "traefik.http.routers.sonarr.rule=Host(`sonarr.home.ahawp.com`)"
+      - "traefik.http.routers.sonarr.rule=Host(`sonarr.${DOMAINNAME}`)"
       - "traefik.http.routers.sonarr.priority=99"
       ## HTTP Routers Auth Bypass
       # - "traefik.http.routers.sonarr-bypass.entrypoints=http"
-      # - "traefik.http.routers.sonarr-bypass.rule=Host(`sonarr.ahawp.com`) && (Headers(`X-Api-Key`, `$SONARR_API_KEY`) || Query(`apikey`, `$SONARR_API_KEY`))"
+      # - "traefik.http.routers.sonarr-bypass.rule=Host(`sonarr.${DOMAINNAME}`) && (Headers(`X-Api-Key`, `$SONARR_API_KEY`) || Query(`apikey`, `$SONARR_API_KEY`))"
       # - "traefik.http.routers.sonarr-bypass.priority=100"
       ## Middlewares
       # - "traefik.http.routers.sonarr-bypass.middlewares=chain-no-auth@file"
@@ -345,18 +345,6 @@ services:
     restart: unless-stopped
     networks:
       - host
-    # ports:
-    #   - target: 32400
-    #     published: 32400
-    #     mode: host
-      # - "3005:3005/tcp"   #USED FOR PLEX COMPANION
-      # - "8324:8324/tcp"   #USED FOR ROKU
-      # - "32469:32469/tcp" #USED FOR DLNA
-      # - "1900:1900/udp"   #USED FOR DLNA
-      # - "32410:32410/udp" #USED FOR GSM
-      # - "32412:32412/udp" #USED FOR GSM
-      # - "32413:32413/udp" #USED FOR GSM
-      # - "32414:32414/udp" #USED FOR GSM
     volumes:
       - ${MEDIA_DIR}/movies:/media/movies
       - ${MEDIA_DIR}/tvshows:/media/tvshows
