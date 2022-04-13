@@ -4,6 +4,7 @@ networks:
   public:
     name: public
     driver: bridge
+    external: 'true'
   host:
     external: 'true'
 
