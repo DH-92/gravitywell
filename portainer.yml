@@ -9,8 +9,8 @@ services:
     image: portainer/portainer-ce:latest
     restart: unless-stopped
     command: -H unix:///var/run/docker.sock
-    # networks:
-    #   - public
+    networks:
+      - public
     ports:
       - "9000:9000"
     volumes:
