@@ -345,10 +345,10 @@ services:
     restart: unless-stopped
     networks:
       - host
-    ports:
-      - target: 32400
-        published: 32400
-        mode: host
+    # ports:
+    #   - target: 32400
+    #     published: 32400
+    #     mode: host
       # - "3005:3005/tcp"   #USED FOR PLEX COMPANION
       # - "8324:8324/tcp"   #USED FOR ROKU
       # - "32469:32469/tcp" #USED FOR DLNA
@@ -369,3 +369,4 @@ services:
       - PLEX_CLAIM=${PLEX_CLAIM}
       - PLEX_IP=${PLEX_IP}
       - ADVERTISE_IP=${PLEX_IP}
+      - ALLOWED_NETWORKS=192.168.0.0/16,172.16.0.0/12,10.0.0.0/8
