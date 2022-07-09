@@ -341,11 +341,11 @@ services:
   ############################# MEDIA
 
   plexms:
-    container_name: plexms
+    # container_name: plexms
     image: plexinc/pms-docker
     restart: unless-stopped
     networks:
-      - host
+      host:
     volumes:
       - ${MEDIA_DIR}/movies:/media/movies
       - ${MEDIA_DIR}/tvshows:/media/tvshows
