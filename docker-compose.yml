@@ -5,14 +5,11 @@ networks:
     name: public
     driver: bridge
     external: true
-  host:
-    external: true
 
 services:
 ## Network Proxy
   traefik:
-    container_name: "traefik"
-    image: traefik:2.6.3
+    image: traefik:2.9.6
     restart: always
     networks:
       public:
@@ -25,43 +22,33 @@ services:
         published: 443
         protocol: tcp
         mode: host
-      - target: 8080
-        published: 8080
-        protocol: tcp
-        mode: host
     environment:
-    - TZ
+      TZ:
+      CF_DNS_API_TOKEN:
+      CF_ZONE_API_TOKEN:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro # Use Docker Socket Proxy instead for improved security
       - ${DATA_DIR}/traefik/traefik.log:/traefik.log
       - ${DATA_DIR}/traefik/access.log:/access.log
+      - ${DATA_DIR}/traefik/acme/cf-acme.json:/cf-acme.json
     command: # CLI arguments
-      # Enable Docker in Traefik, so that it reads labels from Docker services
       - "--providers.docker"
-      # Enable Docker Swarm mode
-      # - --providers.docker.swarmmode=true
-      # - "--providers.docker.endpoint=unix:///var/run/docker.sock"
-      - "--providers.docker.exposedByDefault=false"
+      - '--providers.docker.defaultrule=Host(`{{ index .Labels "com.docker.compose.service" }}.${DOMAINNAME}`)'
+      - "--providers.docker.exposedByDefault=true"
       - "--providers.docker.network=public"
-      # Automatically set Host rule for services
-      # - --providers.docker.defaultrule=Host(`{{ index .Labels "com.docker.compose.service" }}.apawp.com`)
-      # Create an entrypoint "http" listening on port 80
-      - "--entrypoints.http.address=:80"
-      # - "--entrypoints.http.address=:8080"
-      # Create an entrypoint "https" listening on port 443
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.web.http.redirections.entryPoint.to=https"
+      - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
       - "--entrypoints.https.address=:443"
-      # Create an entrpoint "metrics" listening on port 8082
-      - "--entryPoints.metrics.address=:8082"
-      # Allow CloudFlares IP Range to set Forwarded Headers
       - "--entrypoints.https.forwardedHeaders.trustedIPs=173.245.48.0/20,103.21.244.0/22,103.22.200.0/22,103.31.4.0/22,141.101.64.0/18,108.162.192.0/18,190.93.240.0/20,188.114.96.0/20,197.234.240.0/22,198.41.128.0/17,162.158.0.0/15,104.16.0.0/13,104.24.0.0/14,172.64.0.0/13,131.0.72.0/22"
-      # Create the certificate resolver "le" for Let's Encrypt, uses the environment variable EMAIL
-      - "--certificatesresolvers.le.acme.email=jebusv20@gmail.com"
-      # # Store the Let's Encrypt certificates in the mounted volume
-      - "--certificatesresolvers.le.acme.storage=/acme.json"
-      # # Use the TLS Challenge for Let's Encrypt
-#       - --certificatesresolvers.le.acme.tlschallenge=true
-#       - --certificatesresolvers.le.acme.httpchallenge.entrypoint=http
-#       Enable the Traefik log, for configurations and errors
+      - "--entrypoints.https.http.tls.certResolver=cf"
+      - "--entrypoints.https.http.tls.domains[0].main=${DOMAINNAME}"
+      - "--entrypoints.https.http.tls.domains[0].sans=*.${DOMAINNAME}"
+      - "--certificatesresolvers.cf.acme.email=jebusv20@gmail.com"
+      - "--certificatesresolvers.cf.acme.storage=/cf-acme.json"
+      - "--certificatesresolvers.cf.acme.dnschallenge=true"
+      - "--certificatesresolvers.cf.acme.dnschallenge.provider=cloudflare"
+      # Enable the Traefik log, for configurations and errors
       - "--log=true"
       - "--log.level=DEBUG" # (Default: error) DEBUG, INFO, WARN, ERROR, FATAL, PANIC
       - "--log.filePath=/traefik.log"
@@ -70,112 +57,51 @@ services:
       - "--accesslog=true"
       - "--accessLog.filePath=/access.log"
       - "--accessLog.format=json" # (Default: common) COMMON, JSON
-      # - --accessLog.bufferingSize=100 # Configuring a buffer of 100 lines
       # Enable the Dashboard and API
       - "--api=true"
       - "--api.dashboard=true"
-      # - "--api.insecure=true"
-      - "--metrics=true"
-      - "--metrics.prometheus=true"
-      - "--metrics.prometheus.entryPoint=metrics"
-      - "--metrics.prometheus.addrouterslabels=true"
-      - "--metrics.prometheus.addServicesLabels=true"
-      - "--ping=true"
-#       - "--pilot.token=ff5e0126-622a-4245-874f-581f89adf8e6"
     labels:
-      # Enable Traefik for this service, to make it available in the public network
-      - "traefik.enable=true"
-      # Use the traefik-public network (declared above)
-      - "traefik.docker.network=public"
-      #   It can be re-used by other stacks in other Docker Compose files
-      # - "traefik.http.middlewares.https-redirect.redirectscheme.scheme=https"
-      # - "traefik.http.middlewares.https-redirect.redirectscheme.permanent=true"
-      # ## Define Global HTTP Catch-all Router - Redirect all HTTP traffic to HTTPS
-      # - "traefik.http.routers.http-catchall.rule=HostRegexp(`{host:.+}`)"
-      # - "traefik.http.routers.http-catchall.entrypoints=http"
-      # - "traefik.http.routers.http-catchall.middlewares=https-redirect"
-      ## Define the Traefik Dashboards Routes
-      - "traefik.http.routers.traefik.rule=Host(`traefik.${DOMAINNAME}`)"
-      - "traefik.http.routers.traefik.entrypoints=http"
-      # - "traefik.http.routers.traefik.tls=true"
-      - "traefik.http.routers.traefik.service=api@internal"
-      # - "traefik.http.services.traefik.loadbalancer.server.port=8080"
-      ## Healthcheck/ping
-      - "traefik.http.routers.ping.rule=Host(`traefik.${DOMAINNAME}`) && Path(`/ping`)"
-      - "traefik.http.routers.ping.entrypoints=http"
-      # - "traefik.http.routers.ping.tls=true"
-      - "traefik.http.routers.ping.service=ping@internal"
-      # - "traefik.http.services.ping.loadbalancer.server.port=8080"
-      ## Metrics
-      - "traefik.http.routers.metrics.rule=Host(`traefik.${DOMAINNAME}`) && Path(`/metrics`)"
-      - "traefik.http.routers.metrics.entrypoints=http"
-      # - "traefik.http.routers.metrics.tls=true"
-      - "traefik.http.routers.metrics.service=prometheus@internal"
-      # - "traefik.http.services.metrics.loadbalancer.server.port=8082"
-  
+      traefik.http.routers.traefik.service: api@internal
+
   ############################# DOWNLOADERS
 
-  qbittorrent:
-    container_name: "qbittorrent"
+  qbit:
     image: "linuxserver/qbittorrent"
-    restart: unless-stopped
+    restart: always
     networks:
       public:
     ports:
-      # - "${QBIT_WEBUI_PORT}:${QBIT_WEBUI_PORT}"
-      - "6881:6881"
+      - "6881:6881/tcp"
       - "6881:6881/udp"
     volumes:
       - ${DATA_DIR}/qbittorrent:/config
       - ${DOWNLOADS_DIR}:/downloads
     environment:
-      - TZ=${TZ}
-      - PUID=${PUID}
-      - PGID=${PGID}
-      - UMASK_SET=002
-      - WEBUI_PORT=${QBIT_WEBUI_PORT}
+      TZ:
+      PUID:
+      PGID:
+      UMASK_SET: 002
     labels:
-      - "traefik.enable=true"
-      ## HTTP Routers
-      - "traefik.http.routers.qbittorent.entrypoints=http"
-      - "traefik.http.routers.qbittorent.rule=Host(`qbit.${DOMAINNAME}`)"
-      ## Middlewares
-      # - "traefik.http.routers.qbittorent.middlewares=middlewares-rate-limit@file"
-      ## HTTP Services
-      # - "traefik.http.routers.qbittorent.tls=true"
-      - "traefik.http.routers.qbittorent.service=qbittorent"
-      - "traefik.http.services.qbittorent.loadbalancer.server.port=${QBIT_WEBUI_PORT}"
+      traefik.http.services.qbittorent.loadbalancer.server.port: 8080
 
   ############################# INDEXERS
 
   # Jackett - Torrent proxy
   jackett:
-    container_name: jackett
     image: linuxserver/jackett
     restart: always
     networks:
       public:
-    security_opt:
-      - no-new-privileges:true
     volumes:
       - ${DATA_DIR}/jackett:/config
       - ${DOWNLOADS_DIR}:/downloads
-      - "/etc/localtime:/etc/localtime:ro"
+      - /etc/localtime:/etc/localtime:ro
     environment:
-      PUID: $PUID
-      PGID: $PGID
-      TZ: $TZ
+      PUID:
+      PGID:
+      TZ:
     labels:
-      - "traefik.enable=true"
-      ## HTTP Routers
-      - "traefik.http.routers.jackett.entrypoints=http"
-      - "traefik.http.routers.jackett.rule=Host(`jackett.${DOMAINNAME}`)"
-      ## Middlewares
-      # - "traefik.http.routers.jackett.middlewares=chain-oauth@file"
-      ## HTTP Services
-      # - "traefik.http.routers.jackett.tls=true"
-      - "traefik.http.routers.jackett.service=jackett"
-      - "traefik.http.services.jackett.loadbalancer.server.port=9117"
+      traefik.http.services.jackett.loadbalancer.server.port: 9117
 
 
   ############################# PVRS
@@ -183,99 +109,68 @@ services:
   # Radarr - Movie management
   radarr:
     image: linuxserver/radarr
-    container_name: radarr
     restart: always
     networks:
       public:
-    security_opt:
-      - no-new-privileges:true
     volumes:
       # Optional. See why MediaCover is mounted as volume https://github.com/htpcBeginner/docker-traefik/discussions/147
       # - ${DOCKERDIR}/radarr/MediaCover:/config/MediaCover
       - ${DATA_DIR}/radarr:/config
       - ${DOWNLOADS_DIR}:/downloads
       - ${MEDIA_DIR}/movies:/movies
-      - "/etc/localtime:/etc/localtime:ro"
+      - /etc/localtime:/etc/localtime:ro
     environment:
-      PUID: $PUID
-      PGID: $PGID
-      TZ: $TZ
+      PUID:
+      PGID:
+      TZ:
     labels:
-      - "traefik.enable=true"
-      ## HTTP Routers Auth
-      - "traefik.http.routers.radarr.entrypoints=http"
-      - "traefik.http.routers.radarr.rule=Host(`radarr.${DOMAINNAME}`)"
-      - "traefik.http.routers.radarr.priority=99"
-      ## HTTP Routers Auth Bypass
-      # - "traefik.http.routers.radarr-bypass.entrypoints=http"
-      # - "traefik.http.routers.radarr-bypass.rule=Host(`radarr.${DOMAINNAME}`) && (Headers(`X-Api-Key`, `$RADARR_API_KEY`) || Query(`apikey`, `$RADARR_API_KEY`))"
-      # - "traefik.http.routers.radarr-bypass.priority=100"
-      ## Middlewares
-      # - "traefik.http.routers.radarr-bypass.middlewares=chain-no-auth@file"
-      # - "traefik.http.routers.radarr.middlewares=chain-oauth@file"
-      ## HTTP Services
-      # - "traefik.http.routers.radarr-bypass.service=radarr"
-      # - "traefik.http.routers.radarr.tls=true"
-      - "traefik.http.services.radarr.loadbalancer.server.port=7878"
-      - "traefik.http.routers.radarr.service=radarr"
+      traefik.http.services.radarr.loadbalancer.server.port: 7878
 
   # Sonarr - TV Shows management
   sonarr:
     image: linuxserver/sonarr
-    container_name: sonarr
     restart: always
     networks:
       public:
-    security_opt:
-      - no-new-privileges:true
     volumes:
       # Optional. See why MediaCover is mounted as volume https://github.com/htpcBeginner/docker-traefik/discussions/147
       # - ${DOCKERDIR}/sonarr/MediaCover:/config/MediaCover
       - ${DATA_DIR}/sonarr:/config
       - ${DOWNLOADS_DIR}:/downloads
       - ${MEDIA_DIR}/tvshows:/tv
-      - "/etc/localtime:/etc/localtime:ro"
+      - /etc/localtime:/etc/localtime:ro
     environment:
-      PUID: $PUID
-      PGID: $PGID
-      TZ: $TZ
+      PUID:
+      PGID:
+      TZ:
     labels:
-      - "traefik.enable=true"
-      ## HTTP Routers Auth
-      - "traefik.http.routers.sonarr.entrypoints=http"
-      - "traefik.http.routers.sonarr.rule=Host(`sonarr.${DOMAINNAME}`)"
-      - "traefik.http.routers.sonarr.priority=99"
-      ## HTTP Routers Auth Bypass
-      # - "traefik.http.routers.sonarr-bypass.entrypoints=http"
-      # - "traefik.http.routers.sonarr-bypass.rule=Host(`sonarr.${DOMAINNAME}`) && (Headers(`X-Api-Key`, `$SONARR_API_KEY`) || Query(`apikey`, `$SONARR_API_KEY`))"
-      # - "traefik.http.routers.sonarr-bypass.priority=100"
-      ## Middlewares
-      # - "traefik.http.routers.sonarr-bypass.middlewares=chain-no-auth@file"
-      # - "traefik.http.routers.sonarr.middlewares=chain-oauth@file"
-      ## HTTP Services
-      # - "traefik.http.routers.sonarr-bypass.service=sonarr"
-      # - "traefik.http.routers.sonarr.tls=true"
-      - "traefik.http.routers.sonarr.service=sonarr"
-      - "traefik.http.services.sonarr.loadbalancer.server.port=8989"
+      traefik.http.services.sonarr.loadbalancer.server.port: 8989
 
   ############################# MEDIA
 
   plexms:
-    # container_name: plexms
     image: plexinc/pms-docker
-    restart: unless-stopped
-    networks:
-      host:
+    restart: always
+    ports:
+      - "32400:32400/tcp"
+      - "3005:3005/tcp"
+      - "8324:8324/tcp"
+      - "32469:32469/tcp"
+      - "1900:1900/udp" # conflicts with xTeVe
+      - "32410:32410/udp"
+      - "32412:32412/udp"
+      - "32413:32413/udp"
+      - "32414:32414/udp"
+      - "33400:33400"
     volumes:
       - ${MEDIA_DIR}/movies:/media/movies
       - ${MEDIA_DIR}/tvshows:/media/tvshows
       - ${DATA_DIR}/plexms:/config
       - /dev/shm:/data/transcode # Offload transcoding to RAM if you have enough RAM
     environment:
-      - TZ=${TZ}
-      - PUID=${PUID}
-      - PLEX_GID=${PGID}
-      - PLEX_CLAIM=${PLEX_CLAIM}
-      - PLEX_IP=${PLEX_IP}
-      - ADVERTISE_IP=${PLEX_IP}
-      - ALLOWED_NETWORKS=192.168.0.0/16,172.16.0.0/12,10.0.0.0/8
+      TZ:
+      PLEX_UID: ${PUID}
+      PLEX_GID: ${PGID}
+      PLEX_CLAIM:
+      ADVERTISE_IP: ${PLEX_IP}
+      ALLOWED_NETWORKS: 192.168.0.0/16,172.16.0.0/12,10.0.0.0/8
