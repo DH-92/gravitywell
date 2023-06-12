@@ -62,7 +62,7 @@ services:
       - "--api.dashboard=true"
     labels:
       traefik.http.routers.traefik.service: api@internal
-  
+
   ############################# DOWNLOADERS
 
   qbit:
@@ -106,7 +106,6 @@ services:
       TZ:
     labels:
       traefik.http.services.jackett.loadbalancer.server.port: 9117
-
 
   ############################# PVRS
 
