@@ -9,7 +9,7 @@ networks:
 services:
 ## Network Proxy
   traefik:
-    image: traefik:2.9.6
+    image: traefik:latest
     restart: always
     networks:
       public:
@@ -48,9 +48,10 @@ services:
       - "--certificatesresolvers.cf.acme.storage=/cf-acme.json"
       - "--certificatesresolvers.cf.acme.dnschallenge=true"
       - "--certificatesresolvers.cf.acme.dnschallenge.provider=cloudflare"
+      - "--certificatesresolvers.cf.acme.dnschallenge.provider=cloudflare"
       # Enable the Traefik log, for configurations and errors
       - "--log=true"
-      - "--log.level=DEBUG" # (Default: error) DEBUG, INFO, WARN, ERROR, FATAL, PANIC
+      - "--log.level=INFO" # (Default: error) DEBUG, INFO, WARN, ERROR, FATAL, PANIC
       - "--log.filePath=/traefik.log"
       - "--log.format=json" # (Default: common) COMMON, JSON
       # Enable the access log, with HTTP requests
@@ -85,6 +86,7 @@ services:
       resources:
         limits:
           memory: 8G
+          cpus: "0.5"
     labels:
       traefik.http.services.qbittorent.loadbalancer.server.port: 8080
 
@@ -171,6 +173,7 @@ services:
       - ${MEDIA_DIR}/music:/media/music
       - ${DATA_DIR}/plexms:/config
       - /dev/shm:/data/transcode # Offload transcoding to RAM if you have enough RAM
+      - /dev/dri:/dev/dri # Allow quicksync for hardware acceleration
     environment:
       TZ:
       PLEX_UID: ${PUID}
@@ -178,3 +181,8 @@ services:
       PLEX_CLAIM:
       ADVERTISE_IP: ${PLEX_IP}
       ALLOWED_NETWORKS: 192.168.0.0/16,172.16.0.0/12,10.0.0.0/8
+    deploy:
+      resources:
+        reservations:
+          memory: 6G
+          cpus: "3"
