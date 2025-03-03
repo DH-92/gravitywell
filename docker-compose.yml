@@ -67,7 +67,8 @@ services:
   ############################# DOWNLOADERS
 
   qbit:
-    image: "linuxserver/qbittorrent"
+    # image: "linuxserver/qbittorrent"
+    image: "ghcr.io/hotio/qbittorrent"
     restart: always
     networks:
       public:
@@ -75,13 +76,16 @@ services:
       - "6881:6881/tcp"
       - "6881:6881/udp"
     volumes:
-      - ${DATA_DIR}/qbittorrent:/config
+      # - ${DATA_DIR}/qbittorrent:/config
+      - ${DATA_DIR}/qbit:/config
+      - ${DOWNLOADS_DIR}:/data
       - ${DOWNLOADS_DIR}:/downloads
     environment:
       TZ:
       PUID:
       PGID:
       UMASK_SET: 002
+      UMASK: 002
     deploy:
       resources:
         limits:
