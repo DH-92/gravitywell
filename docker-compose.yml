@@ -158,7 +158,7 @@ services:
       traefik.http.services.sonarr.loadbalancer.server.port: 8989
 
   # overseerr - request management
-  sonarr:
+  overseerr:
     image: linuxserver/overseerr
     restart: always
     networks:
@@ -207,5 +207,6 @@ services:
         reservations:
           memory: 6G
           cpus: "3"
+
 
 
