@@ -157,7 +157,7 @@ services:
     labels:
       traefik.http.services.sonarr.loadbalancer.server.port: 8989
 
-  # Sonarr - TV Shows management
+  # overseerr - request management
   sonarr:
     image: linuxserver/overseerr
     restart: always
@@ -207,4 +207,5 @@ services:
         reservations:
           memory: 6G
           cpus: "3"
+
 
