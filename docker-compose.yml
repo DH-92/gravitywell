@@ -157,6 +157,21 @@ services:
     labels:
       traefik.http.services.sonarr.loadbalancer.server.port: 8989
 
+  # Sonarr - TV Shows management
+  sonarr:
+    image: linuxserver/overseerr
+    restart: always
+    networks:
+      public:
+    volumes:
+      - ${DATA_DIR}/overseerr:/config
+    environment:
+      PUID:
+      PGID:
+      TZ:
+    labels:
+      traefik.http.services.overseerr.loadbalancer.server.port: 5055
+
   ############################# MEDIA
 
   plexms:
@@ -192,3 +207,4 @@ services:
         reservations:
           memory: 6G
           cpus: "3"
+
