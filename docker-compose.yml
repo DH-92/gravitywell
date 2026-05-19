@@ -1,4 +1,4 @@
-version: "3.9"
+# version: "3.9"
 
 networks:
   public:
@@ -75,6 +75,8 @@ services:
     ports:
       - "6881:6881/tcp"
       - "6881:6881/udp"
+      - "15310:15310/tcp"
+      - "15310:15310/udp"
     volumes:
       # - ${DATA_DIR}/qbittorrent:/config
       - ${DATA_DIR}/qbit:/config
@@ -125,8 +127,9 @@ services:
       # Optional. See why MediaCover is mounted as volume https://github.com/htpcBeginner/docker-traefik/discussions/147
       # - ${DOCKERDIR}/radarr/MediaCover:/config/MediaCover
       - ${DATA_DIR}/radarr:/config
-      - ${DOWNLOADS_DIR}:/downloads
-      - ${MEDIA_DIR}/movies:/movies
+      # - ${DOWNLOADS_DIR}:/downloads
+      # - ${MEDIA_DIR}/movies:/movies
+      - ${MEDIA_DIR}:/media
       - /etc/localtime:/etc/localtime:ro
     environment:
       PUID:
@@ -145,8 +148,9 @@ services:
       # Optional. See why MediaCover is mounted as volume https://github.com/htpcBeginner/docker-traefik/discussions/147
       # - ${DOCKERDIR}/sonarr/MediaCover:/config/MediaCover
       - ${DATA_DIR}/sonarr:/config
-      - ${DOWNLOADS_DIR}:/downloads
-      - ${MEDIA_DIR}/tvshows:/tv
+      # - ${DOWNLOADS_DIR}:/downloads
+      # - ${MEDIA_DIR}/tvshows:/tv
+      - ${MEDIA_DIR}:/media
       - /etc/localtime:/etc/localtime:ro
     environment:
       PUID:
@@ -154,6 +158,21 @@ services:
       TZ:
     labels:
       traefik.http.services.sonarr.loadbalancer.server.port: 8989
+
+  # overseerr - request management
+  overseerr:
+    image: linuxserver/overseerr
+    restart: always
+    networks:
+      public:
+    volumes:
+      - ${DATA_DIR}/overseerr:/config
+    environment:
+      PUID:
+      PGID:
+      TZ:
+    labels:
+      traefik.http.services.overseerr.loadbalancer.server.port: 5055
 
   ############################# MEDIA
 
@@ -190,3 +209,6 @@ services:
         reservations:
           memory: 6G
           cpus: "3"
+
+
+
