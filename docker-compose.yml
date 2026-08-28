@@ -44,6 +44,7 @@ services:
       - "--entrypoints.https.http.tls.certResolver=cf"
       - "--entrypoints.https.http.tls.domains[0].main=${DOMAINNAME}"
       - "--entrypoints.https.http.tls.domains[0].sans=*.${DOMAINNAME}"
+      - "--entrypoints.https.http.middlewares=test-auth@docker"
       - "--certificatesresolvers.cf.acme.email=jebusv20@gmail.com"
       - "--certificatesresolvers.cf.acme.storage=/cf-acme.json"
       - "--certificatesresolvers.cf.acme.dnschallenge=true"
@@ -63,7 +64,8 @@ services:
       - "--api.dashboard=true"
     labels:
       traefik.http.routers.traefik.service: api@internal
-
+      traefik.http.middlewares.test-auth.basicauth.users: 'olympus:$$apr1$$RuAw8SML$$vkJj6SCjfeMnv1iMKJrIL1'
+      traefik.entrypoints.https.http.middleswares: 'test-auth@docker'
   ############################# DOWNLOADERS
 
   qbit:
@@ -73,14 +75,10 @@ services:
     networks:
       public:
     ports:
-      - "6881:6881/tcp"
-      - "6881:6881/udp"
       - "15310:15310/tcp"
       - "15310:15310/udp"
     volumes:
-      # - ${DATA_DIR}/qbittorrent:/config
       - ${DATA_DIR}/qbit:/config
-      - ${DOWNLOADS_DIR}:/data
       - ${DOWNLOADS_DIR}:/downloads
     environment:
       TZ:
@@ -92,7 +90,7 @@ services:
       resources:
         limits:
           memory: 8G
-          cpus: "0.5"
+          cpus: "4"
     labels:
       traefik.http.services.qbittorent.loadbalancer.server.port: 8080
 
@@ -127,8 +125,6 @@ services:
       # Optional. See why MediaCover is mounted as volume https://github.com/htpcBeginner/docker-traefik/discussions/147
       # - ${DOCKERDIR}/radarr/MediaCover:/config/MediaCover
       - ${DATA_DIR}/radarr:/config
-      # - ${DOWNLOADS_DIR}:/downloads
-      # - ${MEDIA_DIR}/movies:/movies
       - ${MEDIA_DIR}:/media
       - /etc/localtime:/etc/localtime:ro
     environment:
@@ -148,8 +144,6 @@ services:
       # Optional. See why MediaCover is mounted as volume https://github.com/htpcBeginner/docker-traefik/discussions/147
       # - ${DOCKERDIR}/sonarr/MediaCover:/config/MediaCover
       - ${DATA_DIR}/sonarr:/config
-      # - ${DOWNLOADS_DIR}:/downloads
-      # - ${MEDIA_DIR}/tvshows:/tv
       - ${MEDIA_DIR}:/media
       - /etc/localtime:/etc/localtime:ro
     environment:
@@ -209,6 +203,3 @@ services:
         reservations:
           memory: 6G
           cpus: "3"
-
-
-
