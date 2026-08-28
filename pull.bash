@@ -4,7 +4,7 @@ cd "$(dirname "${BASH_SOURCE[0]}")"
 
 git fetch --prune origin
 LOCAL=$(git rev-parse HEAD)
-REMOTE=$(git rev-parse origin/master)
+REMOTE=$(git rev-parse origin/main)
 [[ "$LOCAL" == "$REMOTE" ]] && exit 0        # nothing to do
 
 git reset --hard origin/main               # server never has local commits
