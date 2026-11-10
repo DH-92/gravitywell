@@ -44,7 +44,12 @@ services:
       - "--entrypoints.https.http.tls.certResolver=cf"
       - "--entrypoints.https.http.tls.domains[0].main=${DOMAINNAME}"
       - "--entrypoints.https.http.tls.domains[0].sans=*.${DOMAINNAME}"
-      - "--entrypoints.https.http.middlewares=test-auth@docker"
+      # - "--entrypoints.https.http.middlewares=test-auth@docker"
+      # - "--entrypoints.wtac-https.address=:443"
+      # - "--entrypoints.wtac-https.forwardedHeaders.trustedIPs=173.245.48.0/20,103.21.244.0/22,103.22.200.0/22,103.31.4.0/22,141.101.64.0/18,108.162.192.0/18,190.93.240.0/20,188.114.96.0/20,197.234.240.0/22,198.41.128.0/17,162.158.0.0/15,104.16.0.0/13,104.24.0.0/14,172.64.0.0/13,131.0.72.0/22"
+      # - "--entrypoints.wtac-https.http.tls.certResolver=cf"
+      - "--entrypoints.https.http.tls.domains[1].main=wtac.app"
+      - "--entrypoints.https.http.tls.domains[1].sans=*.wtac.app"
       - "--certificatesresolvers.cf.acme.email=${ACME_EMAIL}"
       - "--certificatesresolvers.cf.acme.storage=/cf-acme.json"
       - "--certificatesresolvers.cf.acme.dnschallenge=true"
@@ -63,6 +68,7 @@ services:
       - "--api=true"
       - "--api.dashboard=true"
     labels:
+      traefik.http.routers.traefik.middlewares: test-auth@docker
       traefik.http.routers.traefik.service: api@internal
       traefik.http.middlewares.test-auth.basicauth.users: '${TRAEFIK_BASICAUTH_USERS}'
       traefik.entrypoints.https.http.middleswares: 'test-auth@docker'
@@ -92,6 +98,7 @@ services:
           memory: 8G
           cpus: "4"
     labels:
+      traefik.http.routers.qbittorrent.middlewares: test-auth@docker
       traefik.http.services.qbittorent.loadbalancer.server.port: 8080
 
   ############################# INDEXERS
@@ -111,6 +118,7 @@ services:
       PGID:
       TZ:
     labels:
+      traefik.http.routers.jackett.middlewares: test-auth@docker
       traefik.http.services.jackett.loadbalancer.server.port: 9117
 
   ############################# PVRS
@@ -132,6 +140,7 @@ services:
       PGID:
       TZ:
     labels:
+      traefik.http.routers.radarr.middlewares: test-auth@docker
       traefik.http.services.radarr.loadbalancer.server.port: 7878
 
   # Sonarr - TV Shows management
@@ -151,6 +160,7 @@ services:
       PGID:
       TZ:
     labels:
+      traefik.http.routers.sonarr.middlewares: test-auth@docker
       traefik.http.services.sonarr.loadbalancer.server.port: 8989
 
   # overseerr - request management
@@ -166,6 +176,7 @@ services:
       PGID:
       TZ:
     labels:
+      traefik.http.routers.overseerr.middlewares: test-auth@docker
       traefik.http.services.overseerr.loadbalancer.server.port: 5055
 
   ############################# MEDIA
@@ -185,11 +196,11 @@ services:
       - "32414:32414/udp"
       - "33400:33400"
     volumes:
-      - ${MEDIA_DIR}/movies:/media/movies
-      - ${MEDIA_DIR}/tvshows:/media/tvshows
-      - ${MEDIA_DIR}/music:/media/music
-      - ${DATA_DIR}/plexms:/config
-      - /dev/shm:/data/transcode # Offload transcoding to RAM if you have enough RAM
+      - ${MEDIA_DIR}/movies:/media/movies:ro
+      - ${MEDIA_DIR}/tvshows:/media/tvshows:ro
+      - ${MEDIA_DIR}/music:/media/music:ro
+      - ${DATA_DIR}/plexms:/config:rw
+      - /dev/shm:/data/transcode:rw # Offload transcoding to RAM if you have enough RAM
       - /dev/dri:/dev/dri # Allow quicksync for hardware acceleration
     environment:
       TZ:
@@ -203,3 +214,78 @@ services:
         reservations:
           memory: 6G
           cpus: "3"
+
+
+  wtac:
+    build:
+      context: ./wtac/wtac-app
+    #   # Not `verify` — that stage runs the smoke gate in the image and is worth running on demand, not on
+    #   # every `up`: `docker build --target verify .`
+    #   target: runtime
+    # image: wtac-app:local
+    # container_name: wtac-app
+
+    # **The load-bearing line.** Without the `127.0.0.1:` prefix Docker publishes on every interface, and
+    # this app has no authentication by decision (spec §8). The server warns on startup whenever this flag is
+    # the only thing holding that, which in a container is always.
+    # ports:
+    #  - "127.0.0.1:8080:8080"
+    networks:
+      public:
+
+    environment:
+      # Already the image's defaults; stated because this is the file somebody edits to change them, and a
+      # port in `ports:` with nothing setting `PORT` is how the two drift apart.
+      HOST: "0.0.0.0"
+      PORT: "8080"
+
+      # A Natsoft-internal meeting key, not derivable from the date: WTAC 2026 ran on 2026-09-04 and was
+      # served at `20260905.SMS`. Unset means no socket, every card renders off the captures in the image,
+      # and the page says so in words. During an event:
+      #
+      #   NATSOFT_LIVE_PATH=/LiveMeeting/20260905.SMS docker compose up
+      # NATSOFT_LIVE_PATH: "${NATSOFT_LIVE_PATH:-}"
+
+    # Nothing to flush — every write to `overrides.json` is synchronous and atomic before its response
+    # returns — so a short stop is honest rather than optimistic.
+    stop_grace_period: 5s
+    restart: unless-stopped
+
+    # Repeated from the image so a reader of this file learns that `/health` decides it. Keep the two in
+    # step, or `compose` and `docker run` disagree about the same container.
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch(`http://127.0.0.1:$${process.env.PORT}/health`).then(r=>process.exit(r.ok?0:1),()=>process.exit(1))",
+        ]
+      interval: 30s
+      timeout: 5s
+      start_period: 40s
+      retries: 3
+    labels:
+      traefik.http.routers.wtac.rule: 'Host(`www.wtac.app`)'
+      traefik.http.services.wtac.loadbalancer.server.port: 8080
+
+  # ntfy - self-hosted push notifications. smartd (host) posts to 127.0.0.1:8090.
+  ntfy:
+    image: binwiederhier/ntfy
+    command: serve
+    restart: always
+    networks:
+      public:
+    ports:
+      - "127.0.0.1:8090:80"   # host-local publish endpoint for smartd (no auth)
+    environment:
+      TZ:
+      NTFY_BASE_URL: "https://ntfy.home.ahawp.com"
+      NTFY_BEHIND_PROXY: "true"
+      NTFY_CACHE_FILE: "/var/lib/ntfy/cache.db"
+      NTFY_ATTACHMENT_CACHE_DIR: "/var/lib/ntfy/attachments"
+    volumes:
+      - ${DATA_DIR}/ntfy:/var/lib/ntfy
+    labels:
+      traefik.http.routers.ntfy.middlewares: test-auth@docker
+      traefik.http.services.ntfy.loadbalancer.server.port: 80
