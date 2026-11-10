@@ -2,3 +2,16 @@ data/*/**
 !data/*
 .env*
 docker-compose-*.yml
+
+# Python bytecode
+__pycache__/
+*.pyc
+
+# Timestamped compose backups + generated orphan reports (produced by the scripts here)
+docker-compose.yml.bak*
+orphan-downloads-report.*.txt
+
+# Separate projects with their own GitHub repos — present in-place as build context,
+# not vendored into gravitywell (would otherwise embed a foreign repo).
+mtg-collector-viewer/
+wtac/
